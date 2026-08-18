@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "CUIDA",
+    "slug": "cuida",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/CUIDAMORE.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/CUIDAMORE.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B131E"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/CUIDAMORE.png",
+        "backgroundColor": "#0B131E"
+      }
+    },
+    "web": {
+      "favicon": "./assets/CUIDAMORE.png"
+    }
+  }
+}
