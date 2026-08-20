@@ -63,18 +63,41 @@ const INITIAL_PROFILE = {
   display: { connected: true, battery: '100%', lastSync: 'Agora mesmo' },
 };
 
+const BRAZIL_TIME_ZONE = 'America/Sao_Paulo';
+
 const formatDateLabel = (date) =>
-  date.toLocaleDateString('pt-BR', {
+  new Intl.DateTimeFormat('pt-BR', {
+    timeZone: BRAZIL_TIME_ZONE,
     weekday: 'short',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  });
+  }).format(date);
+
+const formatBrazilTime = (date) =>
+  new Intl.DateTimeFormat('pt-BR', {
+    timeZone: BRAZIL_TIME_ZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).format(date);
+
+const getBrazilDateParts = (date) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BRAZIL_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  return Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+};
 
 const toLocalDateKey = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const { year, month, day } = getBrazilDateParts(date);
   return `${year}-${month}-${day}`;
 };
 
@@ -112,9 +135,11 @@ const formatTimeInput = (value) => {
 
 const getTimingLabel = (scheduledTime, takenAt) => {
   const [hours, minutes] = scheduledTime.split(':').map(Number);
-  const scheduled = new Date(takenAt);
-  scheduled.setHours(hours, minutes, 0, 0);
-  const difference = Math.round((new Date(takenAt).getTime() - scheduled.getTime()) / 60000);
+  const currentParts = getBrazilDateParts(new Date(takenAt));
+  const currentMinutes = Number(currentParts.hour || 0) * 60 + Number(currentParts.minute || 0);
+  let difference = currentMinutes - (hours * 60 + minutes);
+  if (difference > 720) difference -= 1440;
+  if (difference < -720) difference += 1440;
   if (difference < -15) return { timing: 'early', label: 'Tomado adiantado' };
   if (difference > 15) return { timing: 'late', label: 'Tomado atrasado' };
   return { timing: 'on_time', label: 'Tomado no horário' };
@@ -503,7 +528,7 @@ function LogoutButton({ navigation }) {
 }
 
 function HomeScreen({ navigation }) {
-  const { profile, medicines, displayStatus, isSosActive, setMedicines, setHistoryEvents, currentUser, isGuest } = useContext(AppContext);
+  const { profile, medicines, displayStatus, isSosActive, currentUser, isGuest } = useContext(AppContext);
 
   const requireAccount = () => {
     Alert.alert('Conta necessária', 'Crie uma conta para salvar dados, confirmar remédios e usar o dispositivo.', [
@@ -528,7 +553,7 @@ function HomeScreen({ navigation }) {
       date: toLocalDateKey(new Date(takenAt)),
       timestamp: takenAt,
       title: `${nextMedicine.name} confirmado`,
-      subtitle: `${new Date(takenAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${timing.label}`,
+      subtitle: `${formatBrazilTime(new Date(takenAt))} • ${timing.label}`,
       type: 'success',
       timing: timing.timing,
       scheduledTime: nextMedicine.time,
@@ -540,9 +565,7 @@ function HomeScreen({ navigation }) {
     };
     try {
       await update(ref(db, `${userPath(currentUser.uid, 'medicamentos')}/${nextMedicine.id}`), { status: 'Tomado', lastTakenAt: takenAt });
-      const savedEvent = await safePush(ref(db, userPath(currentUser.uid, 'historico')), event);
-      setMedicines((current) => current.map((medicine) => medicine.id === nextMedicine.id ? { ...medicine, status: 'Tomado', lastTakenAt: takenAt } : medicine));
-      setHistoryEvents((current) => [{ ...event, id: savedEvent.key }, ...current]);
+      await safePush(ref(db, userPath(currentUser.uid, 'historico')), event);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível registrar a tomada no Firebase.');
     }
@@ -628,7 +651,7 @@ function HomeScreen({ navigation }) {
 }
 
 function MedicinesScreen({ navigation }) {
-  const { medicines, setMedicines, currentUser, isGuest } = useContext(AppContext);
+  const { medicines, currentUser, isGuest } = useContext(AppContext);
   const [newMed, setNewMed] = useState({ name: '', dose: '', info: '', quantity: '', duration: '', time: '', photo: null });
   const [isPickingPhoto, setIsPickingPhoto] = useState(false);
 
@@ -698,8 +721,7 @@ function MedicinesScreen({ navigation }) {
         createdAt: new Date().toISOString(),
       };
 
-      const saved = await safePush(ref(db, userPath(currentUser.uid, 'medicamentos')), item, 8000);
-      setMedicines([{ ...item, id: saved.key || item.id }, ...medicines]);
+      await safePush(ref(db, userPath(currentUser.uid, 'medicamentos')), item, 8000);
       setNewMed({ name: '', dose: '', info: '', quantity: '', duration: '', time: '', photo: null });
       Alert.alert('Sucesso', 'Remédio salvo com foto no Firebase!');
     } catch (err) {
@@ -1153,7 +1175,7 @@ export default function App() {
           date: toLocalDateKey(new Date()),
           timestamp: new Date().toISOString(),
           title,
-          subtitle: (payload && payload.time ? payload.time + ' • ' : '') + 'SOS recebido',
+          subtitle: `${formatBrazilTime(new Date())} • SOS recebido`,
           type: 'warning',
         };
         const eventKey = `sos-${String(payload?.time || Date.now()).replace(/[.#$[\]]/g, '-')}`;
