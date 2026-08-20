@@ -7,7 +7,7 @@
       name="description"
       content="Cuida+ é um projeto educacional para apoiar cuidadoras e famílias no cuidado de idosos, com lembretes de remédios, monitoramento e alertas de emergência."
     />
-    <title>Cuida+ | Projeto</title>
+    <title>Cuida+ | Projeto de TCC</title>
     <link rel="icon" href="assets/CUIDAMORE.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,247 +15,110 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="container nav">
-        <div class="brand">
-          <img src="assets/CUIDAMORE.png" alt="Logo Cuida+" class="brand-logo" />
-          <span>Cuida+</span>
-        </div>
-
-        <nav class="menu">
-          <a href="#sobre">Sobre</a>
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#funcionalidades">Funcionalidades</a>
-          <a href="#tecnologia">Tecnologia</a>
-          <a href="#impacto">Impacto</a>
-        </nav>
-      </div>
-    </header>
+    <nav class="navbar" aria-label="Navegação principal">
+      <a class="brand" href="#inicio" aria-label="Cuida+ início">
+        <img src="assets/CUIDAMORE.png" alt="Logo Cuida+" class="brand-logo" />
+        <span>Cuida<span class="brand-plus">+</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#inicio">Início</a></li>
+        <li><a href="#sobre">O Projeto</a></li>
+        <li><a href="#desenvolvimento">Desenvolvimento</a></li>
+        <li><a href="#funcionalidades">Funcionalidades</a></li>
+        <li><a href="#tft">Telas TFT</a></li>
+        <li><a href="#equipe">Equipe</a></li>
+      </ul>
+    </nav>
 
     <main>
-      <section class="hero">
-        <div class="container hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">Uma ideia pensada para cuidar melhor</p>
-            <h1>Cuida+ nasceu para deixar o cuidado mais simples, mais humano e mais organizado.</h1>
-            <p class="lead">
-              É um projeto pensado para ajudar famílias, cuidadores e idosos no dia a dia, trazendo organização,
-              apoio e segurança para a rotina de medicamentos, comunicação e atenção em momentos de urgência.
-            </p>
+      <header id="inicio" class="hero">
+        <div class="hero-content">
+          <span class="badge">Projeto de TCC</span>
+          <h1>Cuida+: um sistema integrado para apoio ao cuidado de idosos</h1>
+          <p>O projeto reúne um aplicativo para o cuidador, um dispositivo com telas TFT e um backend em tempo real para organizar medicamentos, registrar eventos e comunicar situações de emergência.</p>
+          <a href="#sobre" class="btn-primary">Ver a estrutura do projeto</a>
+        </div>
+      </header>
 
-            <div class="cta-row">
-              <a class="btn btn-primary" href="#sobre">Entenda o projeto</a>
-              <a class="btn btn-secundary" href="#como-funciona">Como tudo funciona</a>
-            </div>
-          </div>
-
-          <div class="hero-visual">
-            <div class="device-showcase">
-              <div class="device-frame">
-                <div class="device-screen">
-                  <div class="screen-header">Cuida+</div>
-                  <div class="screen-card">
-                    <span>Medicamentos</span>
-                    <strong>08:00</strong>
-                  </div>
-                  <div class="screen-card muted">
-                    <span>Emergência</span>
-                    <strong>Botão SOS</strong>
-                  </div>
-                  <div class="screen-card muted small">
-                    <span>Histórico</span>
-                    <strong>Hoje</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <section id="sobre" class="section about-section">
+        <div class="section-inner">
+          <p class="section-kicker">O Projeto</p>
+          <h2>Sobre o TCC</h2>
+          <p class="section-desc">A ideia central do Cuida+ é aproximar o cuidador da rotina do idoso por meio de um sistema conectado. O cuidador acompanha informações pelo aplicativo, enquanto o dispositivo físico apresenta lembretes e oferece uma forma simples de interação para o idoso.</p>
+          <p class="section-desc secondary-desc">Em vez de concentrar todo o cuidado em uma única tela, a solução distribui as responsabilidades entre o frontend, o backend e o dispositivo embarcado. Assim, cada parte do sistema tem uma função definida e os dados podem ser atualizados em tempo real.</p>
         </div>
       </section>
 
-      <section id="sobre" class="section">
-        <div class="container">
-          <div class="section-heading center">
-            <p class="eyebrow">Sobre o projeto</p>
-            <h2>O Cuida+ é uma solução pensada para facilitar a rotina de quem cuida e proteger quem precisa de atenção.</h2>
-          </div>
-
-          <div class="about-grid">
-            <div class="text-panel">
-              <p>
-                Cuidar de uma pessoa idosa envolve muito mais do que lembrar de remédios. Envolve atenção,
-                organização, paciência e, muitas vezes, pequenas tarefas que fazem toda a diferença no dia a dia.
-              </p>
-              <p>
-                Pensando nisso, criamos o Cuida+ como um projeto que une tecnologia e cuidado. Ele ajuda a organizar
-                a rotina, registrar informações importantes e facilitar a comunicação entre o cuidador e a pessoa assistida.
-              </p>
-            </div>
-
-            <div class="info-box">
-              <h3>O que ele busca?</h3>
-              <ul>
-                <li>organizar os remédios e horários</li>
-                <li>reduzir esquecimentos na rotina</li>
-                <li>registrar ocorrências importantes</li>
-                <li>dar apoio rápido em situações de emergência</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="como-funciona" class="section alt-section">
-        <div class="container">
-          <div class="section-heading">
-            <p class="eyebrow">Como funciona</p>
-            <h2>O projeto nasce do nosso trabalho como estudantes de sistemas: programando a parte eletrônica, a lógica do sistema e a experiência do usuário.</h2>
-          </div>
-
-          <div class="split-layout">
-            <div class="story-box">
-              <p>
-                No nosso projeto, a parte de sistemas é muito importante. Nós trabalhamos na programação do dispositivo,
-                na organização dos dados e no desenvolvimento do aplicativo que será usado pelo cuidador.
-              </p>
-              <p>
-                Para isso, usamos o Arduino para configurar o dispositivo que vai receber e mostrar informações importantes,
-                como lembretes e alertas. Também conectamos tudo ao Firebase, que vai guardar os dados em tempo real e
-                facilitar a comunicação entre o sistema e o app.
-              </p>
-              <p>
-                O app do cuidador funciona como central de informações: ele mostra os remédios, o histórico e os dados
-                de quem está sendo cuidado. Já o dispositivo tem botões grandes e acessíveis para idosos, com uma interface
-                simples e fácil de entender.
-              </p>
-            </div>
-
-            <div class="device-gallery">
-              <div class="device-card">
-                <div class="mini-photo app-demo">
-                  <div class="screen-figure app-figure">
-                    <span>Cuida+</span>
-                    <small>App do cuidador</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="device-card">
-                <div class="mini-photo display-demo">
-                  <div class="screen-figure display-figure">
-                    <span>Display</span>
-                    <small>Botões acessíveis</small>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <section id="desenvolvimento" class="section development-section">
+        <div class="section-inner">
+          <p class="section-kicker">Desenvolvimento</p>
+          <h2>Como o sistema foi construído</h2>
+          <div class="architecture-grid">
+            <article class="architecture-card">
+              <span class="architecture-number">01</span>
+              <h3>Frontend e aplicativo</h3>
+              <p>O aplicativo foi desenvolvido com React Native e executado com Expo Go. Ele concentra o login, o cadastro do perfil, o gerenciamento de medicamentos, o histórico e a edição dos dados do cuidador e do idoso.</p>
+              <span class="technology-label">React Native · Expo Go</span>
+            </article>
+            <article class="architecture-card">
+              <span class="architecture-number">02</span>
+              <h3>Backend e dados</h3>
+              <p>O Firebase Realtime Database funciona como backend da aplicação. Ele armazena perfil, medicamentos, eventos do histórico e informações de SOS, permitindo a sincronização entre o aplicativo e o dispositivo.</p>
+              <span class="technology-label">Firebase Realtime Database</span>
+            </article>
+            <article class="architecture-card">
+              <span class="architecture-number">03</span>
+              <h3>Dispositivo e interface física</h3>
+              <p>A parte eletrônica utiliza Arduino para controlar o dispositivo, os botões de interação e as telas TFT. O hardware foi pensado para apresentar informações objetivas e ser acessível ao idoso.</p>
+              <span class="technology-label">Arduino · TFT · Botões físicos</span>
+            </article>
           </div>
         </div>
       </section>
 
       <section id="funcionalidades" class="section">
-        <div class="container">
-          <div class="section-heading">
-            <p class="eyebrow">Funcionalidades</p>
-            <h2>O projeto foi pensado para deixar o cuidado mais prático, sem complicar a rotina de ninguém.</h2>
-          </div>
-
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feature-icon">💊</div>
-              <h3>Cadastro de remédios</h3>
-              <p>O cuidador consegue registrar nome, dose, horário e quantidade para manter a rotina organizada.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">📷</div>
-              <h3>Foto do remédio</h3>
-              <p>É possível anexar uma imagem para facilitar a identificação visual do medicamento.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">🧾</div>
-              <h3>Histórico</h3>
-              <p>O sistema registra o que aconteceu e ajuda a acompanhar a rotina do cuidado ao longo do tempo.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">🚨</div>
-              <h3>Emergência</h3>
-              <p>Com o botão de SOS, o sistema registra a situação e ajuda a documentar o motivo da urgência.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">🔔</div>
-              <h3>Lembretes</h3>
-              <p>Notificações ajudam a lembrar dos horários e deixam a rotina mais segura para quem cuida.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">📱</div>
-              <h3>Interface acessível</h3>
-              <p>O app foi pensado para ser fácil de usar, e o dispositivo também foi projetado com botões simples.</p>
-            </div>
+        <div class="section-inner">
+          <p class="section-kicker">Recursos</p>
+          <h2>Funcionalidades</h2>
+          <div class="cards-container">
+            <article class="card"><div class="feature-mark">01</div><h3>Gestão de medicamentos</h3><p>Cadastro de nome, dose, quantidade, horário, observações e foto do medicamento para apoiar o controle da rotina.</p></article>
+            <article class="card"><div class="feature-mark">02</div><h3>Alerta de SOS</h3><p>O acionamento de emergência é enviado ao sistema e pode gerar um registro no histórico e uma notificação para o cuidador.</p></article>
+            <article class="card"><div class="feature-mark">03</div><h3>Histórico de eventos</h3><p>Registro das confirmações de medicamentos e das ocorrências importantes, incluindo a possibilidade de informar o motivo de um SOS.</p></article>
+            <article class="card"><div class="feature-mark">04</div><h3>Perfil do cuidado</h3><p>Dados do cuidador e do idoso ficam organizados em um perfil que pode ser consultado e atualizado pelo aplicativo.</p></article>
+            <article class="card"><div class="feature-mark">05</div><h3>Sincronização em tempo real</h3><p>As alterações no Firebase são acompanhadas pelo aplicativo para manter as informações do cuidado atualizadas.</p></article>
+            <article class="card"><div class="feature-mark">06</div><h3>Interface acessível</h3><p>O app e o dispositivo utilizam informações diretas, botões destacados e uma organização voltada para o uso cotidiano.</p></article>
           </div>
         </div>
       </section>
 
-      <section id="tecnologia" class="section alt-section">
-        <div class="container">
-          <div class="section-heading">
-            <p class="eyebrow">Tecnologia</p>
-            <h2>Usamos ferramentas simples e eficientes para conectar o app, o dispositivo e os dados.</h2>
-          </div>
-
-          <div class="tech-pills">
-            <span>Arduino</span>
-            <span>Firebase</span>
-            <span>React Native</span>
-            <span>Expo</span>
-            <span>Aplicativo do cuidador</span>
-            <span>Banco de dados em nuvem</span>
-            <span>Dispositivo com botões</span>
-            <span>Notificações</span>
+      <section id="tft" class="section tft-section">
+        <div class="section-inner">
+          <p class="section-kicker">Dispositivo físico</p>
+          <h2>Telas TFT e fluxo de interação</h2>
+          <p class="section-desc">As telas TFT fazem parte da interface do dispositivo utilizado pelo idoso. Elas exibem as informações essenciais sem exigir que o usuário navegue pelo aplicativo do cuidador.</p>
+          <div class="tft-grid">
+            <div class="tft-screen"><span class="tft-tag">Tela 01</span><strong>Lembrete</strong><small>Exibe o medicamento e o horário programado.</small></div>
+            <div class="tft-screen"><span class="tft-tag">Tela 02</span><strong>Confirmação</strong><small>Permite indicar que a medicação foi tomada.</small></div>
+            <div class="tft-screen"><span class="tft-tag">Tela 03</span><strong>Emergência</strong><small>Apresenta a ação de SOS e envia o evento ao sistema.</small></div>
           </div>
         </div>
       </section>
 
-      <section id="impacto" class="section">
-        <div class="container impact-box">
-          <div class="impact-copy">
-            <p class="eyebrow">Impacto</p>
-            <h2>O Cuida+ quer deixar o cuidado mais organizado, mais seguro e mais acolhedor.</h2>
-            <p>
-              A ideia é facilitar a rotina dos cuidadores e oferecer apoio melhor para pessoas idosas,
-              com mais organização no uso de remédios, melhor acompanhamento e atenção em casos de emergência.
-            </p>
-          </div>
-
-          <div class="impact-list-wrap">
-            <ul class="impact-list">
-              <li>menos esquecimento na rotina</li>
-              <li>mais segurança no cuidado</li>
-              <li>registro de situações importantes</li>
-              <li>melhor acolhimento para a pessoa idosa</li>
-            </ul>
+      <section id="equipe" class="section team-section">
+        <div class="section-inner">
+          <p class="section-kicker">Quem desenvolveu</p>
+          <h2>Nossa equipe</h2>
+          <div class="team-list">
+            <span>Emanuelli Batista</span>
+            <span>Yasmim Bueno</span>
+            <span>Alice Oliveira</span>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="footer">
-      <div class="container footer-inner">
-        <div class="brand footer-brand">
-          <img src="assets/CUIDAMORE.png" alt="Logo Cuida+" class="brand-logo" />
-          <span>Cuida+</span>
-        </div>
-
-        <div class="footer-names">
-          <p>Emanuelli Batista</p>
-          <p>Yasmim Bueno</p>
-          <p>Alice Oliveira</p>
-        </div>
-      </div>
+    <footer>
+      <p>&copy; 2026 Cuida+ — Trabalho de Conclusão de Curso.</p>
     </footer>
   </body>
 </html>
