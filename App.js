@@ -327,6 +327,35 @@ function RegisterScreen({ navigation }) {
   );
 }
 
+function LogoutButton({ navigation }) {
+  const { setProfile } = useContext(AppContext);
+
+  const confirmLogout = () => {
+    Alert.alert(
+      'Sair da conta',
+      'Tem certeza que deseja sair da conta e voltar para a tela de login?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: () => {
+            setProfile(INITIAL_PROFILE);
+            navigation.getParent()?.replace('Login');
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout} accessibilityRole="button">
+      <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
+      <Text style={styles.logoutButtonText}>Sair</Text>
+    </TouchableOpacity>
+  );
+}
+
 function HomeScreen({ navigation }) {
   const { profile, medicines, historyEvents, displayStatus, isSosActive, setIsSosActive } = useContext(AppContext);
   const [medTaken, setMedTaken] = useState(false);
@@ -346,6 +375,10 @@ function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <ScrollView style={{ paddingHorizontal: 20, flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={styles.screenHeader}>
+          <Text style={styles.screenTitle}>Início</Text>
+          <LogoutButton navigation={navigation} />
+        </View>
         <View style={styles.statusCard}>
           <View>
             <Text style={styles.statusTitle}>Status do display</Text>
@@ -500,6 +533,7 @@ function MedicinesScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <Text style={styles.screenTitle}>Meus Remédios</Text>
+          <LogoutButton navigation={navigation} />
         </View>
 
         <View style={styles.addSection}>
@@ -563,7 +597,7 @@ function MedicinesScreen({ navigation }) {
   );
 }
 
-function HistoryScreen() {
+function HistoryScreen({ navigation }) {
   const { historyEvents, historyDate, setHistoryDate } = useContext(AppContext);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [reasonInput, setReasonInput] = useState('');
@@ -601,7 +635,10 @@ function HistoryScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
-        <Text style={styles.screenTitle}>Histórico</Text>
+        <View style={styles.screenHeader}>
+          <Text style={styles.screenTitle}>Histórico</Text>
+          <LogoutButton navigation={navigation} />
+        </View>
 
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeader}>
@@ -682,7 +719,7 @@ function HistoryScreen() {
   );
 }
 
-function ProfileScreen() {
+function ProfileScreen({ navigation }) {
   const { profile, setProfile } = useContext(AppContext);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -736,7 +773,10 @@ function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
-        <Text style={styles.screenTitle}>Perfil do Usuário</Text>
+        <View style={styles.screenHeader}>
+          <Text style={styles.screenTitle}>Perfil do Usuário</Text>
+          <LogoutButton navigation={navigation} />
+        </View>
 
         <View style={styles.profileCard}>
           <Text style={styles.profileSectionTitle}>Dados do Cuidador</Text>
@@ -964,6 +1004,8 @@ const styles = StyleSheet.create({
   actionSubtitle: { fontSize: normalize(12), color: COLORS.textSecondary },
   screenHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   screenTitle: { fontSize: normalize(20), fontWeight: 'bold', color: COLORS.text },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#E3B3A8', backgroundColor: '#FFF7F4' },
+  logoutButtonText: { color: COLORS.danger, fontSize: normalize(13), fontWeight: '700' },
   addSection: { backgroundColor: COLORS.cardBackground, borderRadius: 16, padding: 16 },
   medCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBackground, borderRadius: 14, padding: 14, marginTop: 10 },
   medTitle: { fontSize: normalize(16), fontWeight: 'bold', color: COLORS.text },
