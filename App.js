@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  KeyboardAvoidingView,
   StatusBar,
   Alert,
   Platform,
@@ -65,7 +66,19 @@ const INITIAL_PROFILE = {
 };
 
 const formatDateLabel = (date) =>
-  date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  date.toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+const toLocalDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const addDays = (date, days) => {
   const next = new Date(date);
@@ -78,6 +91,18 @@ const scale = SCREEN_WIDTH / 375;
 function normalize(size) {
   return Math.round(PixelRatio.roundToNearestPixel(size * scale));
 }
+
+const localUriToDataUrl = async (uri) => {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 
 // Helper to push to Firebase with timeout to avoid hanging requests
 async function safePush(pathRef, data, ms = 8000) {
@@ -141,52 +166,62 @@ function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView contentContainerStyle={styles.scrollCenter} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('./assets/CUIDAMORE.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.brandSub}>Entrar com seu e-mail e senha.</Text>
-        </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollCenter, { paddingBottom: 40 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('./assets/CUIDAMORE.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.brandSub}>Entrar com seu e-mail e senha.</Text>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialCommunityIcons name="email-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 10 }} />
-          <TextInput
-            placeholder="E-mail"
-            placeholderTextColor={COLORS.textSecondary}
-            style={styles.input}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="email-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 10 }} />
+            <TextInput
+              placeholder="E-mail"
+              placeholderTextColor={COLORS.textSecondary}
+              style={styles.input}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialCommunityIcons name="lock-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 10 }} />
-          <TextInput
-            placeholder="Senha"
-            placeholderTextColor={COLORS.textSecondary}
-            secureTextEntry
-            style={styles.input}
-            value={senha}
-            onChangeText={setSenha}
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="lock-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 10 }} />
+            <TextInput
+              placeholder="Senha"
+              placeholderTextColor={COLORS.textSecondary}
+              secureTextEntry
+              style={styles.input}
+              value={senha}
+              onChangeText={setSenha}
+            />
+          </View>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin}>
-          <Text style={styles.primaryBtnText}>Entrar</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin}>
+            <Text style={styles.primaryBtnText}>Entrar</Text>
+          </TouchableOpacity>
 
-        <View style={{ height: 18 }} />
-        <TouchableOpacity style={styles.googleBtn} onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.googleBtnText}>Criar conta</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <View style={{ height: 18 }} />
+          <TouchableOpacity style={styles.googleBtn} onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.googleBtnText}>Criar conta</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -240,44 +275,54 @@ function RegisterScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView contentContainerStyle={styles.scrollCenter} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('./assets/CUIDAMORE.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.brandSub}>Cadastro do cuidador e do idoso.</Text>
-        </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollCenter, { paddingBottom: 40 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('./assets/CUIDAMORE.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.brandSub}>Cadastro do cuidador e do idoso.</Text>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="Nome do cuidador" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={caregiverName} onChangeText={setCaregiverName} />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="Telefone do cuidador" placeholderTextColor={COLORS.textSecondary} style={styles.input} keyboardType="phone-pad" value={caregiverPhone} onChangeText={setCaregiverPhone} />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="E-mail" placeholderTextColor={COLORS.textSecondary} style={styles.input} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="Senha" placeholderTextColor={COLORS.textSecondary} secureTextEntry style={styles.input} value={senha} onChangeText={setSenha} />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="Nome do idoso" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={elderName} onChangeText={setElderName} />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="Idade do idoso" placeholderTextColor={COLORS.textSecondary} style={styles.input} keyboardType="numeric" value={elderAge} onChangeText={setElderAge} />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput placeholder="Condição do idoso" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={elderCondition} onChangeText={setElderCondition} />
-        </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="Nome do cuidador" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={caregiverName} onChangeText={setCaregiverName} />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="Telefone do cuidador" placeholderTextColor={COLORS.textSecondary} style={styles.input} keyboardType="phone-pad" value={caregiverPhone} onChangeText={setCaregiverPhone} />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="E-mail" placeholderTextColor={COLORS.textSecondary} style={styles.input} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="Senha" placeholderTextColor={COLORS.textSecondary} secureTextEntry style={styles.input} value={senha} onChangeText={setSenha} />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="Nome do idoso" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={elderName} onChangeText={setElderName} />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="Idade do idoso" placeholderTextColor={COLORS.textSecondary} style={styles.input} keyboardType="numeric" value={elderAge} onChangeText={setElderAge} />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput placeholder="Condição do idoso" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={elderCondition} onChangeText={setElderCondition} />
+          </View>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={handleAuth}>
-          <Text style={styles.primaryBtnText}>Criar Conta</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={styles.primaryBtn} onPress={handleAuth}>
+            <Text style={styles.primaryBtnText}>Criar Conta</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -421,18 +466,29 @@ function MedicinesScreen({ navigation }) {
       return;
     }
 
-    const item = {
-      id: Date.now().toString(),
-      ...newMed,
-      status: 'Pendente',
-    };
-
-    setMedicines([item, ...medicines]);
-    setNewMed({ name: '', dose: '', info: '', quantity: '', time: '', photo: null });
-
     try {
+      let photoValue = newMed.photo || null;
+
+      if (newMed.photo && newMed.photo.startsWith('file://')) {
+        try {
+          photoValue = await localUriToDataUrl(newMed.photo);
+        } catch (base64Error) {
+          console.warn('Falha ao converter foto para DataURL:', base64Error);
+        }
+      }
+
+      const item = {
+        id: Date.now().toString(),
+        ...newMed,
+        photo: photoValue,
+        status: 'Pendente',
+      };
+
+      setMedicines([item, ...medicines]);
+      setNewMed({ name: '', dose: '', info: '', quantity: '', time: '', photo: null });
+
       await safePush(ref(db, 'medicamentos/'), item, 8000);
-      Alert.alert('Sucesso', 'Remédio salvo com foto e Firebase!');
+      Alert.alert('Sucesso', 'Remédio salvo com foto no Firebase!');
     } catch (err) {
       Alert.alert('Aviso', 'Remédio salvo localmente, mas falhou ao enviar ao Firebase: ' + (err.message || 'timeout'));
     }
@@ -512,11 +568,11 @@ function HistoryScreen() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [reasonInput, setReasonInput] = useState('');
 
-  const selectedDateKey = historyDate.toISOString().slice(0, 10);
+  const selectedDateKey = toLocalDateKey(historyDate);
   const filteredEvents = historyEvents.filter((event) => event.date === selectedDateKey);
 
   const moveDate = (days) => {
-    setHistoryDate(addDays(historyDate, days));
+    setHistoryDate((prev) => addDays(prev, days));
   };
 
   const saveEmergencyReason = () => {
@@ -931,9 +987,9 @@ const styles = StyleSheet.create({
   reasonHint: { fontSize: normalize(11), color: COLORS.primary, marginTop: 6, fontWeight: '600' },
   calendarCard: { backgroundColor: COLORS.cardBackground, borderRadius: 14, padding: 12, marginBottom: 12 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  calendarNavButton: { backgroundColor: COLORS.primaryButton, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  calendarNavText: { color: '#FFF', fontWeight: '600', fontSize: normalize(12) },
-  calendarDateText: { fontSize: normalize(14), fontWeight: '700', color: COLORS.text, textAlign: 'center' },
+  calendarNavButton: { backgroundColor: COLORS.primaryButton, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, minWidth: 82 },
+  calendarNavText: { color: '#FFF', fontWeight: '600', fontSize: normalize(12), textAlign: 'center' },
+  calendarDateText: { flex: 1, fontSize: normalize(12), fontWeight: '700', color: COLORS.text, textAlign: 'center', marginHorizontal: 8, flexShrink: 1, numberOfLines: 2 },
   todayButton: { backgroundColor: '#FFF', borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
   todayButtonText: { color: COLORS.primaryDark, fontWeight: '700', fontSize: normalize(12) },
   emptyHistoryCard: { backgroundColor: COLORS.cardBackground, borderRadius: 12, padding: 18, marginTop: 12, alignItems: 'center' },
