@@ -381,6 +381,7 @@ function RegisterScreen({ navigation }) {
         provisional: true,
         verified: false,
       },
+      onboardingCompleted: false,
     };
 
     try {
@@ -465,13 +466,14 @@ function RegisterScreen({ navigation }) {
 }
 
 function SideMenuButton({ navigation }) {
+  const { currentUser, isGuest } = useContext(AppContext);
   const [visible, setVisible] = useState(false);
   const menuItems = [
     { label: 'Início', icon: 'home-outline', route: 'Início' },
     { label: 'Meus remédios', icon: 'pill', route: 'Remédios' },
     { label: 'Histórico', icon: 'history', route: 'Histórico' },
     { label: 'Perfil', icon: 'account-outline', route: 'Perfil' },
-    { label: 'Criar uma conta', icon: 'account-plus-outline', route: 'Register', stack: true },
+    ...(isGuest && !currentUser ? [{ label: 'Criar uma conta', icon: 'account-plus-outline', route: 'Register', stack: true }] : []),
   ];
 
   return (
@@ -524,6 +526,88 @@ function LogoutButton({ navigation }) {
       <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
       <Text style={styles.logoutButtonText}>Sair</Text>
     </TouchableOpacity>
+  );
+}
+
+function SosPushModal({ notice, onClose }) {
+  if (!notice) return null;
+
+  return (
+    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+      <View style={styles.sosPushOverlay}>
+        <View style={styles.sosPushCard}>
+          <View style={styles.sosPushIcon}><Ionicons name="warning" size={34} color="#FFF" /></View>
+          <Text style={styles.sosPushTitle}>SOS acionado</Text>
+          <Text style={styles.sosPushText}>{notice.message || 'Uma emergência foi solicitada. Verifique a situação imediatamente.'}</Text>
+          <Text style={styles.sosPushTime}>{notice.time || formatBrazilTime(new Date())}</Text>
+          <TouchableOpacity style={styles.sosPushButton} onPress={onClose}>
+            <Text style={styles.sosPushButtonText}>Entendi</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const TUTORIAL_STEPS = [
+  {
+    title: 'Bem-vindo ao CUIDA+',
+    text: 'Parabéns por concluir o cadastro. Vamos conhecer rapidamente as principais funções para cuidar da rotina com mais segurança.',
+    route: 'Início',
+  },
+  {
+    title: 'Tela inicial',
+    text: 'Aqui você acompanha o próximo medicamento, confirma quando ele foi tomado e vê o status do dispositivo. O SOS aparece nesta tela quando uma emergência é acionada.',
+    route: 'Início',
+  },
+  {
+    title: 'Meus remédios',
+    text: 'Cadastre nome, dose, quantidade, duração, horário e uma foto. A lista abaixo reúne sua rotina para facilitar a conferência diária.',
+    route: 'Remédios',
+  },
+  {
+    title: 'Histórico e relatório',
+    text: 'No histórico você acompanha as tomadas, identifica atrasos ou adiantamentos e consulta relatórios de 1 semana, 2 semanas ou 1 mês.',
+    route: 'Histórico',
+  },
+  {
+    title: 'Perfil do usuário',
+    text: 'No perfil você pode editar os dados do cuidador e do idoso sempre que houver alguma mudança.',
+    route: 'Perfil',
+  },
+  {
+    title: 'Tudo pronto',
+    text: 'Agora você já conhece o CUIDA+. Use o menu de três pontinhos para alternar entre as áreas e acompanhar o cuidado todos os dias.',
+    route: 'Início',
+  },
+];
+
+function TutorialOverlay({ visible, currentStep, onNext, onSkip }) {
+  if (!visible) return null;
+  const step = TUTORIAL_STEPS[currentStep];
+  const isLastStep = currentStep === TUTORIAL_STEPS.length - 1;
+
+  return (
+    <View style={styles.tutorialOverlay}>
+      <View style={styles.tutorialCard}>
+        <View style={styles.tutorialProgress}>
+          {TUTORIAL_STEPS.map((item, index) => <View key={item.title} style={[styles.tutorialDot, index === currentStep && styles.tutorialDotActive]} />)}
+        </View>
+        <Text style={styles.tutorialKicker}>GUIA DO CUIDADOR</Text>
+        <Text style={styles.tutorialTitle}>{step.title}</Text>
+        <Text style={styles.tutorialText}>{step.text}</Text>
+        <Text style={styles.tutorialHint}>Use os três pontinhos na lateral esquerda para abrir esta área.</Text>
+        <View style={styles.tutorialActions}>
+          <TouchableOpacity onPress={onSkip} style={styles.tutorialSkipButton}>
+            <Text style={styles.tutorialSkipText}>Pular tutorial</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onNext} style={styles.tutorialNextButton}>
+            <Text style={styles.tutorialNextText}>{isLastStep ? 'Começar a usar' : 'Próximo'}</Text>
+            <Ionicons name={isLastStep ? 'checkmark' : 'arrow-forward'} size={17} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -1071,6 +1155,7 @@ function ProfileScreen({ navigation }) {
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const navigationRef = React.createRef();
 
 function TabNavigator() {
   return (
@@ -1092,6 +1177,10 @@ function TabNavigator() {
 export default function App() {
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   const [isGuest, setIsGuest] = useState(false);
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [sosNotice, setSosNotice] = useState(null);
+  const lastSosKey = useRef(null);
   const [profile, setProfile] = useState(INITIAL_PROFILE);
   const [medicines, setMedicines] = useState(INITIAL_MEDICINES);
   const [historyEvents, setHistoryEvents] = useState(INITIAL_HISTORY_EVENTS);
@@ -1125,6 +1214,9 @@ export default function App() {
       const data = snapshot.val();
       if (data) {
         setProfile(data);
+        if (data.onboardingCompleted === false) {
+          setTutorialVisible(true);
+        }
       }
     });
 
@@ -1160,15 +1252,26 @@ export default function App() {
 
       if (active) {
         setIsSosActive(true);
+        const sosKey = String(payload?.time || 'active');
+        const isNewSos = lastSosKey.current !== sosKey;
+        if (isNewSos) {
+          lastSosKey.current = sosKey;
+          setSosNotice({
+            message: (payload && payload.message) || 'Uma emergência foi solicitada. Verifique a situação imediatamente.',
+            time: payload?.time ? formatBrazilTime(new Date(payload.time)) : formatBrazilTime(new Date()),
+          });
+        }
         const title = (payload && payload.title) || '🚨 ALERTA DE EMERGÊNCIA - SOS!';
         const body = (payload && payload.message) || 'O idoso acionou o botão de emergência no display!';
-        try {
-          await Notifications.scheduleNotificationAsync({
-            content: { title, body, sound: 'default' },
-            trigger: null,
-          });
-        } catch (e) {
-          console.warn('Falha ao agendar notificação:', e.message || e);
+        if (isNewSos) {
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: { title, body, sound: 'default' },
+              trigger: null,
+            });
+          } catch (e) {
+            console.warn('Falha ao agendar notificação:', e.message || e);
+          }
         }
 
         const newEvent = {
@@ -1179,9 +1282,12 @@ export default function App() {
           type: 'warning',
         };
         const eventKey = `sos-${String(payload?.time || Date.now()).replace(/[.#$[\]]/g, '-')}`;
-        await set(ref(db, `${userPath(currentUser.uid, 'historico')}/${eventKey}`), newEvent);
+        if (isNewSos) {
+          await set(ref(db, `${userPath(currentUser.uid, 'historico')}/${eventKey}`), newEvent);
+        }
       } else {
         setIsSosActive(false);
+        lastSosKey.current = null;
       }
     });
 
@@ -1213,7 +1319,8 @@ export default function App() {
         setIsSosActive,
       }}
     >
-      <NavigationContainer>
+      <>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
@@ -1221,6 +1328,27 @@ export default function App() {
           <Stack.Screen name="MainApp" component={TabNavigator} />
         </Stack.Navigator>
       </NavigationContainer>
+      <SosPushModal notice={sosNotice} onClose={() => setSosNotice(null)} />
+      <TutorialOverlay
+        visible={tutorialVisible && Boolean(currentUser)}
+        currentStep={tutorialStep}
+        onSkip={async () => {
+          setTutorialVisible(false);
+          if (currentUser) await set(ref(db, userPath(currentUser.uid, 'perfil/onboardingCompleted')), true);
+        }}
+        onNext={async () => {
+          const nextStep = tutorialStep + 1;
+          if (nextStep >= TUTORIAL_STEPS.length) {
+            setTutorialVisible(false);
+            if (currentUser) await set(ref(db, userPath(currentUser.uid, 'perfil/onboardingCompleted')), true);
+            navigationRef.current?.navigate('MainApp', { screen: 'Início' });
+            return;
+          }
+          setTutorialStep(nextStep);
+          navigationRef.current?.navigate('MainApp', { screen: TUTORIAL_STEPS[nextStep].route });
+        }}
+      />
+      </>
     </AppContext.Provider>
   );
 }
@@ -1260,6 +1388,28 @@ const styles = StyleSheet.create({
   sosAlertText: { color: '#FFF', fontSize: normalize(13), marginTop: 2 },
   sosInfoCard: { backgroundColor: COLORS.cardBackground, borderRadius: 12, padding: 12, marginTop: 12, alignItems: 'center' },
   sosInfoText: { color: COLORS.textSecondary, fontSize: normalize(13) },
+  sosPushOverlay: { flex: 1, backgroundColor: 'rgba(45, 31, 20, 0.48)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  sosPushCard: { width: '100%', maxWidth: 360, backgroundColor: '#FFF9F1', borderRadius: 18, padding: 24, alignItems: 'center', borderWidth: 2, borderColor: COLORS.danger, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 18, elevation: 10 },
+  sosPushIcon: { width: 66, height: 66, borderRadius: 33, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.danger, marginBottom: 14 },
+  sosPushTitle: { color: COLORS.danger, fontSize: normalize(22), fontWeight: 'bold', textAlign: 'center' },
+  sosPushText: { color: COLORS.text, fontSize: normalize(14), lineHeight: normalize(20), textAlign: 'center', marginTop: 10 },
+  sosPushTime: { color: COLORS.textSecondary, fontSize: normalize(13), fontWeight: '700', marginTop: 10 },
+  sosPushButton: { width: '100%', backgroundColor: COLORS.danger, borderRadius: 10, alignItems: 'center', paddingVertical: 12, marginTop: 18 },
+  sosPushButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: normalize(14) },
+  tutorialOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 20, backgroundColor: 'rgba(45, 31, 20, 0.58)', justifyContent: 'center', paddingHorizontal: 20 },
+  tutorialCard: { backgroundColor: '#FFF9F1', borderRadius: 18, padding: 22, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 18, elevation: 10 },
+  tutorialProgress: { flexDirection: 'row', gap: 6, marginBottom: 18 },
+  tutorialDot: { flex: 1, height: 4, borderRadius: 2, backgroundColor: COLORS.border },
+  tutorialDotActive: { backgroundColor: COLORS.primary },
+  tutorialKicker: { color: COLORS.primaryDark, fontSize: normalize(10), fontWeight: '800', letterSpacing: 1.2 },
+  tutorialTitle: { color: COLORS.text, fontSize: normalize(23), fontWeight: 'bold', marginTop: 8 },
+  tutorialText: { color: COLORS.textSecondary, fontSize: normalize(15), lineHeight: normalize(22), marginTop: 10 },
+  tutorialHint: { color: COLORS.primaryDark, fontSize: normalize(12), lineHeight: normalize(17), marginTop: 14, fontWeight: '600' },
+  tutorialActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 22 },
+  tutorialSkipButton: { paddingVertical: 10, paddingRight: 12 },
+  tutorialSkipText: { color: COLORS.textSecondary, fontSize: normalize(12), fontWeight: '700' },
+  tutorialNextButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.primary, borderRadius: 10, paddingHorizontal: 15, paddingVertical: 11 },
+  tutorialNextText: { color: '#FFF', fontSize: normalize(13), fontWeight: 'bold' },
   guestBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF7E8', borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginTop: 12 },
   guestBannerText: { flex: 1, color: COLORS.primaryDark, fontSize: normalize(12), lineHeight: normalize(17) },
   homeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 },
