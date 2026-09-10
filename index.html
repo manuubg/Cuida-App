@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Cuida+ é um projeto educacional para apoiar cuidadoras e famílias no cuidado de idosos, com lembretes de remédios, monitoramento e alertas de emergência."
+    />
+    <title>Cuida+ | Projeto de TCC</title>
+    <link rel="icon" href="assets/CUIDAMORE.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="navbar" aria-label="Navegação principal">
+      <a class="brand" href="#inicio" aria-label="Cuida+ início">
+        <img src="assets/CUIDAMORE.png" alt="Logo Cuida+" class="brand-logo" />
+        <span>Cuida<span class="brand-plus">+</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#inicio">Início</a></li>
+        <li><a href="#sobre">O Projeto</a></li>
+        <li><a href="#desenvolvimento">Desenvolvimento</a></li>
+        <li><a href="#funcionalidades">Funcionalidades</a></li>
+        <li><a href="#tft">Telas TFT</a></li>
+        <li><a href="#equipe">Equipe</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <header id="inicio" class="hero">
+        <div class="hero-content">
+          <span class="badge">Projeto de TCC</span>
+          <h1>Cuida+: um sistema integrado para apoio ao cuidado de idosos</h1>
+          <p>O projeto reúne um aplicativo para o cuidador, um dispositivo com telas TFT e um backend em tempo real para organizar medicamentos, registrar eventos e comunicar situações de emergência.</p>
+          <a href="#sobre" class="btn-primary">Ver a estrutura do projeto</a>
+        </div>
+      </header>
+
+      <section id="sobre" class="section about-section">
+        <div class="section-inner">
+          <p class="section-kicker">O Projeto</p>
+          <h2>Sobre o TCC</h2>
+          <p class="section-desc">A ideia central do Cuida+ é aproximar o cuidador da rotina do idoso por meio de um sistema conectado. O cuidador acompanha informações pelo aplicativo, enquanto o dispositivo físico apresenta lembretes e oferece uma forma simples de interação para o idoso.</p>
+          <p class="section-desc secondary-desc">Em vez de concentrar todo o cuidado em uma única tela, a solução distribui as responsabilidades entre o frontend, o backend e o dispositivo embarcado. Assim, cada parte do sistema tem uma função definida e os dados podem ser atualizados em tempo real.</p>
+        </div>
+      </section>
+
+      <section id="desenvolvimento" class="section development-section">
+        <div class="section-inner">
+          <p class="section-kicker">Desenvolvimento</p>
+          <h2>Como o sistema foi construído</h2>
+          <div class="architecture-grid">
+            <article class="architecture-card">
+              <span class="architecture-number">01</span>
+              <h3>Frontend e aplicativo</h3>
+              <p>O aplicativo foi desenvolvido com React Native e executado com Expo Go. Ele concentra o login, o cadastro do perfil, o gerenciamento de medicamentos, o histórico e a edição dos dados do cuidador e do idoso.</p>
+              <span class="technology-label">React Native · Expo Go</span>
+            </article>
+            <article class="architecture-card">
+              <span class="architecture-number">02</span>
+              <h3>Backend e dados</h3>
+              <p>O Firebase Realtime Database funciona como backend da aplicação. Ele armazena perfil, medicamentos, eventos do histórico e informações de SOS, permitindo a sincronização entre o aplicativo e o dispositivo.</p>
+              <span class="technology-label">Firebase Realtime Database</span>
+            </article>
+            <article class="architecture-card">
+              <span class="architecture-number">03</span>
+              <h3>Dispositivo e interface física</h3>
+              <p>A parte eletrônica utiliza Arduino para controlar o dispositivo, os botões de interação e as telas TFT. O hardware foi pensado para apresentar informações objetivas e ser acessível ao idoso.</p>
+              <span class="technology-label">Arduino · TFT · Botões físicos</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="funcionalidades" class="section">
+        <div class="section-inner">
+          <p class="section-kicker">Recursos</p>
+          <h2>Funcionalidades</h2>
+          <div class="cards-container">
+            <article class="card"><div class="feature-mark">01</div><h3>Gestão de medicamentos</h3><p>Cadastro de nome, dose, quantidade, horário, observações e foto do medicamento para apoiar o controle da rotina.</p></article>
+            <article class="card"><div class="feature-mark">02</div><h3>Alerta de SOS</h3><p>O acionamento de emergência é enviado ao sistema e pode gerar um registro no histórico e uma notificação para o cuidador.</p></article>
+            <article class="card"><div class="feature-mark">03</div><h3>Histórico de eventos</h3><p>Registro das confirmações de medicamentos e das ocorrências importantes, incluindo a possibilidade de informar o motivo de um SOS.</p></article>
+            <article class="card"><div class="feature-mark">04</div><h3>Perfil do cuidado</h3><p>Dados do cuidador e do idoso ficam organizados em um perfil que pode ser consultado e atualizado pelo aplicativo.</p></article>
+            <article class="card"><div class="feature-mark">05</div><h3>Sincronização em tempo real</h3><p>As alterações no Firebase são acompanhadas pelo aplicativo para manter as informações do cuidado atualizadas.</p></article>
+            <article class="card"><div class="feature-mark">06</div><h3>Interface acessível</h3><p>O app e o dispositivo utilizam informações diretas, botões destacados e uma organização voltada para o uso cotidiano.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="tft" class="section tft-section">
+        <div class="section-inner">
+          <p class="section-kicker">Dispositivo físico</p>
+          <h2>Telas TFT e fluxo de interação</h2>
+          <p class="section-desc">As telas TFT fazem parte da interface do dispositivo utilizado pelo idoso. Elas exibem as informações essenciais sem exigir que o usuário navegue pelo aplicativo do cuidador.</p>
+          <div class="tft-grid">
+            <div class="tft-screen"><span class="tft-tag">Tela 01</span><strong>Lembrete</strong><small>Exibe o medicamento e o horário programado.</small></div>
+            <div class="tft-screen"><span class="tft-tag">Tela 02</span><strong>Confirmação</strong><small>Permite indicar que a medicação foi tomada.</small></div>
+            <div class="tft-screen"><span class="tft-tag">Tela 03</span><strong>Emergência</strong><small>Apresenta a ação de SOS e envia o evento ao sistema.</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="equipe" class="section team-section">
+        <div class="section-inner">
+          <p class="section-kicker">Quem desenvolveu</p>
+          <h2>Nossa equipe</h2>
+          <div class="team-list">
+            <span>Emanuelli Batista</span>
+            <span>Yasmim Bueno</span>
+            <span>Alice Oliveira</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Cuida+ — Trabalho de Conclusão de Curso.</p>
+    </footer>
+  </body>
+</html>
