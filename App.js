@@ -126,6 +126,12 @@ const localUriToDataUrl = async (uri) => {
 };
 
 const userPath = (uid, collection) => `usuarios/${uid}/${collection}`;
+const PRIMARY_FAMILY_ID = 'principal';
+const familyDataPath = (uid, familyId, collection) => (
+  familyId === PRIMARY_FAMILY_ID
+    ? userPath(uid, collection)
+    : userPath(uid, `familiares/${familyId}/${collection}`)
+);
 const isValidTime = (value) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 const formatTimeInput = (value) => {
   const digits = value.replace(/\D/g, '').slice(0, 4);
@@ -529,6 +535,81 @@ function LogoutButton({ navigation }) {
   );
 }
 
+function FamilyModeButton() {
+  const { currentUser, isGuest, activeFamilyId, familyMembers, setActiveFamilyId, addFamily } = useContext(AppContext);
+  const [visible, setVisible] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [condition, setCondition] = useState('');
+  const [deviceCode, setDeviceCode] = useState('');
+
+  if (isGuest || !currentUser) return null;
+
+  const activeFamily = familyMembers.find((family) => family.id === activeFamilyId);
+
+  const handleAddFamily = async () => {
+    if (!name.trim() || !age.trim() || !condition.trim() || !deviceCode.trim()) {
+      Alert.alert('Preenchimento', 'Informe nome, idade, condição e código do dispositivo.');
+      return;
+    }
+    try {
+      await addFamily({ name: name.trim(), age: Number(age), condition: condition.trim(), deviceCode: deviceCode.trim().toUpperCase() });
+      setName('');
+      setAge('');
+      setCondition('');
+      setDeviceCode('');
+      setAdding(false);
+      Alert.alert('Familiar adicionado', 'Agora você pode alternar entre os familiares pelo Modo família.');
+    } catch (error) {
+      Alert.alert('Erro', error.message || 'Não foi possível adicionar o familiar.');
+    }
+  };
+
+  return (
+    <>
+      <TouchableOpacity style={styles.familyModeButton} onPress={() => setVisible(true)} accessibilityLabel="Abrir modo família">
+        <Ionicons name="people-outline" size={18} color={COLORS.primaryDark} />
+        <Text style={styles.familyModeButtonText}>{activeFamily?.name || 'Modo família'}</Text>
+      </TouchableOpacity>
+      <Modal transparent visible={visible} animationType="fade" onRequestClose={() => setVisible(false)}>
+        <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setVisible(false)}>
+          <View style={styles.familyModalCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>Modo família</Text>
+            <Text style={styles.modalSubtitle}>Escolha qual familiar você quer acompanhar.</Text>
+            {familyMembers.map((family) => (
+              <TouchableOpacity key={family.id} style={[styles.familyOption, family.id === activeFamilyId && styles.familyOptionActive]} onPress={() => { setActiveFamilyId(family.id); setVisible(false); }}>
+                <Ionicons name={family.id === activeFamilyId ? 'radio-button-on' : 'radio-button-off'} size={20} color={COLORS.primaryDark} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.familyOptionName}>{family.name}</Text>
+                  <Text style={styles.familyOptionDetails}>{family.age} anos • {family.condition}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {adding ? (
+              <View style={styles.familyForm}>
+                <TextInput style={styles.profileInput} placeholder="Nome do familiar" value={name} onChangeText={setName} />
+                <TextInput style={styles.profileInput} placeholder="Idade" keyboardType="numeric" value={age} onChangeText={setAge} />
+                <TextInput style={styles.profileInput} placeholder="Condição de saúde" value={condition} onChangeText={setCondition} />
+                <TextInput style={styles.profileInput} placeholder="Código do dispositivo" autoCapitalize="characters" value={deviceCode} onChangeText={setDeviceCode} />
+                <View style={styles.modalActions}>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setAdding(false)}><Text style={styles.cancelBtnText}>Cancelar</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.saveBtn} onPress={handleAddFamily}><Text style={styles.saveBtnText}>Adicionar</Text></TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.addFamilyButton} onPress={() => setAdding(true)}>
+                <Ionicons name="add-circle-outline" size={20} color={COLORS.primaryDark} />
+                <Text style={styles.addFamilyButtonText}>Adicionar familiar</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 function SosPushModal({ notice, onClose }) {
   if (!notice) return null;
 
@@ -612,7 +693,7 @@ function TutorialOverlay({ visible, currentStep, onNext, onSkip }) {
 }
 
 function HomeScreen({ navigation }) {
-  const { profile, medicines, displayStatus, isSosActive, currentUser, isGuest } = useContext(AppContext);
+  const { profile, medicines, displayStatus, isSosActive, currentUser, isGuest, familyPath } = useContext(AppContext);
 
   const requireAccount = () => {
     Alert.alert('Conta necessária', 'Crie uma conta para salvar dados, confirmar remédios e usar o dispositivo.', [
@@ -648,8 +729,8 @@ function HomeScreen({ navigation }) {
       photo: nextMedicine.photo || null,
     };
     try {
-      await update(ref(db, `${userPath(currentUser.uid, 'medicamentos')}/${nextMedicine.id}`), { status: 'Tomado', lastTakenAt: takenAt });
-      await safePush(ref(db, userPath(currentUser.uid, 'historico')), event);
+      await update(ref(db, `${familyPath('medicamentos')}/${nextMedicine.id}`), { status: 'Tomado', lastTakenAt: takenAt });
+      await safePush(ref(db, familyPath('historico')), event);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível registrar a tomada no Firebase.');
     }
@@ -661,11 +742,11 @@ function HomeScreen({ navigation }) {
       requireAccount();
       return;
     }
-    if (currentUser) set(ref(db, userPath(currentUser.uid, 'sos')), { active: true, time: new Date().toISOString() });
+    if (currentUser) set(ref(db, familyPath('sos')), { active: true, time: new Date().toISOString() });
   };
 
   const resolveSos = () => {
-    if (currentUser) set(ref(db, userPath(currentUser.uid, 'sos')), { active: false });
+    if (currentUser) set(ref(db, familyPath('sos')), { active: false });
   };
 
   return (
@@ -674,7 +755,7 @@ function HomeScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Início</Text></View>
-          <LogoutButton navigation={navigation} />
+          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
         </View>
         {isGuest ? <View style={styles.guestBanner}><Ionicons name="information-circle-outline" size={20} color={COLORS.primaryDark} /><Text style={styles.guestBannerText}>Modo visitante: você pode conhecer o app, mas precisa criar uma conta para salvar e confirmar informações.</Text></View> : null}
         <View style={styles.statusCard}>
@@ -735,7 +816,7 @@ function HomeScreen({ navigation }) {
 }
 
 function MedicinesScreen({ navigation }) {
-  const { medicines, currentUser, isGuest } = useContext(AppContext);
+  const { medicines, currentUser, isGuest, familyPath } = useContext(AppContext);
   const [newMed, setNewMed] = useState({ name: '', dose: '', info: '', quantity: '', duration: '', time: '', photo: null });
   const [isPickingPhoto, setIsPickingPhoto] = useState(false);
 
@@ -805,7 +886,7 @@ function MedicinesScreen({ navigation }) {
         createdAt: new Date().toISOString(),
       };
 
-      await safePush(ref(db, userPath(currentUser.uid, 'medicamentos')), item, 8000);
+      await safePush(ref(db, familyPath('medicamentos')), item, 8000);
       setNewMed({ name: '', dose: '', info: '', quantity: '', duration: '', time: '', photo: null });
       Alert.alert('Sucesso', 'Remédio salvo com foto no Firebase!');
     } catch (err) {
@@ -819,7 +900,7 @@ function MedicinesScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Meus Remédios</Text></View>
-          <LogoutButton navigation={navigation} />
+          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
         </View>
         {isGuest ? <View style={styles.guestBanner}><Ionicons name="lock-closed-outline" size={20} color={COLORS.primaryDark} /><Text style={styles.guestBannerText}>Modo visitante: o cadastro de medicamentos fica disponível após criar uma conta.</Text></View> : null}
 
@@ -886,7 +967,7 @@ function MedicinesScreen({ navigation }) {
 }
 
 function HistoryScreen({ navigation }) {
-  const { historyEvents, historyDate, setHistoryDate, setHistoryEvents, currentUser, isGuest } = useContext(AppContext);
+  const { historyEvents, historyDate, setHistoryDate, setHistoryEvents, currentUser, isGuest, familyPath } = useContext(AppContext);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [reasonInput, setReasonInput] = useState('');
   const [reportDays, setReportDays] = useState(7);
@@ -930,7 +1011,7 @@ function HistoryScreen({ navigation }) {
       ),
     );
     if (currentUser) {
-      update(ref(db, `${userPath(currentUser.uid, 'historico')}/${selectedEvent.id}`), {
+      update(ref(db, `${familyPath('historico')}/${selectedEvent.id}`), {
         reason: updatedEvent.reason,
         subtitle: updatedEvent.subtitle,
       }).catch(() => Alert.alert('Aviso', 'O motivo foi atualizado na tela, mas não no Firebase.'));
@@ -946,7 +1027,7 @@ function HistoryScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Histórico</Text></View>
-          <LogoutButton navigation={navigation} />
+          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
         </View>
 
         <View style={styles.calendarCard}>
@@ -1042,7 +1123,7 @@ function HistoryScreen({ navigation }) {
 }
 
 function ProfileScreen({ navigation }) {
-  const { profile, setProfile, currentUser, isGuest } = useContext(AppContext);
+  const { profile, setProfile, currentUser, isGuest, familyPath } = useContext(AppContext);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     caregiverName: profile.caregiver?.name || '',
@@ -1083,10 +1164,12 @@ function ProfileScreen({ navigation }) {
         condition: form.elderCondition,
       },
       display: profile.display || { connected: true, battery: '100%', lastSync: 'Agora' },
+      device: profile.device,
+      onboardingCompleted: profile.onboardingCompleted,
     };
 
     // Atualiza os dados no Firebase
-    set(ref(db, userPath(currentUser.uid, 'perfil')), updatedProfile)
+    set(ref(db, familyPath('perfil')), updatedProfile)
       .then(() => {
         setProfile(updatedProfile);
         setEditing(false);
@@ -1101,7 +1184,7 @@ function ProfileScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Perfil do Usuário</Text></View>
-          <LogoutButton navigation={navigation} />
+          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
         </View>
 
         <View style={styles.profileCard}>
@@ -1177,6 +1260,8 @@ function TabNavigator() {
 export default function App() {
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   const [isGuest, setIsGuest] = useState(false);
+  const [activeFamilyId, setActiveFamilyId] = useState(PRIMARY_FAMILY_ID);
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [tutorialVisible, setTutorialVisible] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [sosNotice, setSosNotice] = useState(null);
@@ -1188,6 +1273,20 @@ export default function App() {
   const [displayStatus, setDisplayStatus] = useState(INITIAL_PROFILE.display);
   const [isSosActive, setIsSosActive] = useState(false);
 
+  const addFamily = async ({ name, age, condition, deviceCode }) => {
+    if (!currentUser) throw new Error('É necessário entrar em uma conta.');
+    const familyRef = push(ref(db, userPath(currentUser.uid, 'familiares')));
+    const familyProfile = {
+      caregiver: profile.caregiver || { name: '', email: currentUser.email || '', phone: '' },
+      elder: { name, age, condition },
+      display: { connected: true, battery: '100%', lastSync: 'Agora mesmo' },
+      device: { code: deviceCode, provisional: true, verified: false },
+      onboardingCompleted: true,
+    };
+    await set(familyRef, { perfil: familyProfile });
+    setActiveFamilyId(familyRef.key);
+  };
+
   // Registra permissões de notificação ao abrir o app
   useEffect(() => {
     registerForPushNotificationsAsync();
@@ -1195,8 +1294,31 @@ export default function App() {
 
   useEffect(() => onAuthStateChanged(auth, (user) => {
     setCurrentUser(user);
-    if (user) setIsGuest(false);
+    if (user) {
+      setIsGuest(false);
+      setActiveFamilyId(PRIMARY_FAMILY_ID);
+    }
   }), []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setFamilyMembers([]);
+      return undefined;
+    }
+    const familiesRef = ref(db, userPath(currentUser.uid, 'familiares'));
+    return onValue(familiesRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      const relatives = Object.keys(data)
+        .filter((key) => data[key]?.perfil?.elder)
+        .map((key) => ({
+          id: key,
+          name: data[key].perfil.elder.name,
+          age: data[key].perfil.elder.age,
+          condition: data[key].perfil.elder.condition,
+        }));
+      setFamilyMembers((previous) => [previous.find((family) => family.id === PRIMARY_FAMILY_ID) || { id: PRIMARY_FAMILY_ID, name: 'Familiar principal', age: '', condition: '' }, ...relatives]);
+    });
+  }, [currentUser]);
 
   // SINCRONIZAÇÃO EM TEMPO REAL COM FIREBASE
   useEffect(() => {
@@ -1205,15 +1327,21 @@ export default function App() {
       setMedicines([]);
       setHistoryEvents([]);
       setIsSosActive(false);
+      setActiveFamilyId(PRIMARY_FAMILY_ID);
       return undefined;
     }
 
     // 1. Escuta alterações no Perfil
-    const profileRef = ref(db, userPath(currentUser.uid, 'perfil'));
+    const profileRef = ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'perfil'));
     const unsubscribeProfile = onValue(profileRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setProfile(data);
+        setDisplayStatus(data.display || INITIAL_PROFILE.display);
+        setFamilyMembers((previous) => [
+          { id: activeFamilyId, name: data.elder?.name || 'Familiar', age: data.elder?.age || '', condition: data.elder?.condition || '' },
+          ...previous.filter((family) => family.id !== activeFamilyId),
+        ]);
         if (data.onboardingCompleted === false) {
           setTutorialVisible(true);
         }
@@ -1221,7 +1349,7 @@ export default function App() {
     });
 
     // 2. Escuta alterações na lista de Medicamentos
-    const medsRef = ref(db, userPath(currentUser.uid, 'medicamentos'));
+    const medsRef = ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'medicamentos'));
     const unsubscribeMeds = onValue(medsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1236,7 +1364,7 @@ export default function App() {
     });
 
     // 3. Escuta o histórico persistido
-    const historyRef = ref(db, userPath(currentUser.uid, 'historico'));
+    const historyRef = ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'historico'));
     const unsubscribeHistory = onValue(historyRef, (snapshot) => {
       const data = snapshot.val();
       const loadedHistory = data ? Object.keys(data).map((key) => ({ ...data[key], id: key })) : [];
@@ -1244,7 +1372,7 @@ export default function App() {
     });
 
     // 4. Escuta e dispara Alerta de SOS em Tempo Real com Notificação Sonora
-    const sosRef = ref(db, userPath(currentUser.uid, 'sos'));
+    const sosRef = ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'sos'));
     const unsubscribeSos = onValue(sosRef, async (snapshot) => {
       const val = snapshot.val();
       const active = Boolean(val && val.active);
@@ -1283,7 +1411,7 @@ export default function App() {
         };
         const eventKey = `sos-${String(payload?.time || Date.now()).replace(/[.#$[\]]/g, '-')}`;
         if (isNewSos) {
-          await set(ref(db, `${userPath(currentUser.uid, 'historico')}/${eventKey}`), newEvent);
+          await set(ref(db, `${familyDataPath(currentUser.uid, activeFamilyId, 'historico')}/${eventKey}`), newEvent);
         }
       } else {
         setIsSosActive(false);
@@ -1297,7 +1425,7 @@ export default function App() {
       unsubscribeHistory();
       unsubscribeSos();
     };
-  }, [currentUser]);
+  }, [currentUser, activeFamilyId]);
 
   return (
     <AppContext.Provider
@@ -1307,6 +1435,11 @@ export default function App() {
         currentUser,
         isGuest,
         setGuestMode: setIsGuest,
+        activeFamilyId,
+        familyMembers,
+        setActiveFamilyId,
+        addFamily,
+        familyPath: (collection) => familyDataPath(currentUser?.uid, activeFamilyId, collection),
         medicines,
         setMedicines,
         historyEvents,
@@ -1334,13 +1467,13 @@ export default function App() {
         currentStep={tutorialStep}
         onSkip={async () => {
           setTutorialVisible(false);
-          if (currentUser) await set(ref(db, userPath(currentUser.uid, 'perfil/onboardingCompleted')), true);
+          if (currentUser) await set(ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'perfil/onboardingCompleted')), true);
         }}
         onNext={async () => {
           const nextStep = tutorialStep + 1;
           if (nextStep >= TUTORIAL_STEPS.length) {
             setTutorialVisible(false);
-            if (currentUser) await set(ref(db, userPath(currentUser.uid, 'perfil/onboardingCompleted')), true);
+            if (currentUser) await set(ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'perfil/onboardingCompleted')), true);
             navigationRef.current?.navigate('MainApp', { screen: 'Início' });
             return;
           }
@@ -1431,6 +1564,7 @@ const styles = StyleSheet.create({
   actionSubtitle: { fontSize: normalize(12), color: COLORS.textSecondary },
   screenHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   screenHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  screenHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   menuButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: COLORS.cardBackground },
   menuOverlay: { flex: 1, backgroundColor: 'rgba(45, 31, 20, 0.28)' },
   sideMenu: { width: 255, minHeight: '100%', backgroundColor: '#FFF9F1', paddingTop: 58, paddingHorizontal: 18, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 14, elevation: 8 },
@@ -1438,6 +1572,8 @@ const styles = StyleSheet.create({
   sideMenuItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   sideMenuItemText: { color: COLORS.text, fontSize: normalize(15), fontWeight: '600' },
   screenTitle: { fontSize: normalize(20), fontWeight: 'bold', color: COLORS.text },
+  familyModeButton: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: 130, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#FFF9F1' },
+  familyModeButtonText: { color: COLORS.primaryDark, fontSize: normalize(11), fontWeight: '700', flexShrink: 1 },
   logoutButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#E3B3A8', backgroundColor: '#FFF7F4' },
   logoutButtonText: { color: COLORS.danger, fontSize: normalize(13), fontWeight: '700' },
   addSection: { backgroundColor: COLORS.cardBackground, borderRadius: 16, padding: 16 },
@@ -1479,6 +1615,14 @@ const styles = StyleSheet.create({
   emptyHistoryText: { color: COLORS.textSecondary, fontSize: normalize(13) },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalCard: { width: '100%', backgroundColor: '#FFF', borderRadius: 16, padding: 18 },
+  familyModalCard: { width: '100%', maxWidth: 380, backgroundColor: '#FFF9F1', borderRadius: 16, padding: 18 },
+  familyOption: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, marginTop: 8 },
+  familyOptionActive: { backgroundColor: COLORS.cardBackground, borderColor: COLORS.primary },
+  familyOptionName: { color: COLORS.text, fontWeight: '700', fontSize: normalize(14) },
+  familyOptionDetails: { color: COLORS.textSecondary, fontSize: normalize(11), marginTop: 2 },
+  familyForm: { marginTop: 12 },
+  addFamilyButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginTop: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10 },
+  addFamilyButtonText: { color: COLORS.primaryDark, fontWeight: '700', fontSize: normalize(13) },
   modalTitle: { fontSize: normalize(18), fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
   modalSubtitle: { fontSize: normalize(13), color: COLORS.textSecondary, marginBottom: 12 },
   modalInput: { backgroundColor: '#F9F3EA', borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, minHeight: 120, textAlignVertical: 'top', padding: 12, color: COLORS.text },
