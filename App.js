@@ -924,7 +924,7 @@ function HistoryScreen({ navigation }) {
             ))}
           </View>
           <Text style={styles.reportText}>Doses registradas: {reportSummary.total} • No horário: {reportSummary.onTime}</Text>
-          <Text style={styles.reportText}>Adiantadas: {reportSummary.early} • Atrasadas: {reportSummary.late} • SOS: {reportSummary.sos}</Text>
+          <Text style={styles.reportText}>Adiantadas: {reportSummary.early} • Atrasadas: {reportSummary.late}</Text>
         </View>
 
         {filteredEvents.length === 0 ? (
@@ -989,7 +989,7 @@ function HistoryScreen({ navigation }) {
 }
 
 function ProfileScreen({ navigation }) {
-  const { profile, setProfile, currentUser, isGuest, familyPath, medicines, historyEvents, activeFamilyId, familyMembers } = useContext(AppContext);
+  const { profile, setProfile, currentUser, isGuest, familyPath } = useContext(AppContext);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     caregiverName: profile.caregiver?.name || '',
@@ -1044,9 +1044,6 @@ function ProfileScreen({ navigation }) {
       .catch((err) => Alert.alert('Erro', err.message));
   };
 
-  const takenCount = medicines.filter((medicine) => medicine.status === 'Tomado').length;
-  const activeFamily = familyMembers.find((family) => family.id === activeFamilyId);
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
@@ -1088,34 +1085,6 @@ function ProfileScreen({ navigation }) {
               <Text style={styles.profileLabel}>Condição: {profile.elder?.condition}</Text>
             </>
           )}
-        </View>
-
-        <View style={styles.profileHighlightCard}>
-          <View style={styles.profileHighlightHeader}>
-            <View style={styles.profileHighlightIcon}><Ionicons name="sparkles-outline" size={21} color="#FFF" /></View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.profileHighlightTitle}>Resumo do cuidado</Text>
-              <Text style={styles.profileHighlightSubtitle}>Acompanhando {activeFamily?.name || profile.elder?.name || 'este familiar'}</Text>
-            </View>
-          </View>
-          <View style={styles.profileStatsRow}>
-            <View style={styles.profileStat}><Text style={styles.profileStatValue}>{medicines.length}</Text><Text style={styles.profileStatLabel}>remédios</Text></View>
-            <View style={styles.profileStat}><Text style={styles.profileStatValue}>{takenCount}</Text><Text style={styles.profileStatLabel}>confirmados</Text></View>
-            <View style={styles.profileStat}><Text style={styles.profileStatValue}>{historyEvents.length}</Text><Text style={styles.profileStatLabel}>registros</Text></View>
-          </View>
-        </View>
-
-        <View style={styles.profileCard}>
-          <Text style={styles.profileSectionTitle}>Plano de cuidado</Text>
-          <View style={styles.profileInfoRow}><Ionicons name="calendar-outline" size={19} color={COLORS.primaryDark} /><Text style={styles.profileInfoText}>Acompanhe os horários e confirme cada dose na tela inicial.</Text></View>
-          <View style={styles.profileInfoRow}><Ionicons name="people-outline" size={19} color={COLORS.primaryDark} /><Text style={styles.profileInfoText}>Use o Modo família para alternar entre os familiares.</Text></View>
-          <View style={styles.profileInfoRow}><Ionicons name="time-outline" size={19} color={COLORS.primaryDark} /><Text style={styles.profileInfoText}>O histórico registra a evolução do cuidado ao longo do dia.</Text></View>
-        </View>
-
-        <View style={styles.profileDeviceCard}>
-          <Ionicons name="hardware-chip-outline" size={22} color={COLORS.primaryDark} />
-          <View style={{ flex: 1 }}><Text style={styles.profileDeviceTitle}>Dispositivo do TCC</Text><Text style={styles.profileDeviceText}>{profile.device?.code ? `Código: ${profile.device.code}` : 'A integração com o dispositivo será configurada nesta etapa.'}</Text></View>
-          <View style={styles.profileComingBadge}><Text style={styles.profileComingText}>EM BREVE</Text></View>
         </View>
 
         <View style={styles.profileActions}>
