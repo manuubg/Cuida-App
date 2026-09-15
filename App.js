@@ -2,6 +2,7 @@
 import {
   Text,
   View,
+  Animated,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
@@ -619,6 +620,7 @@ function TutorialOverlay({ visible, currentStep, onNext, onSkip }) {
 
 function HomeScreen({ navigation }) {
   const { profile, medicines, displayStatus, isSosActive, currentUser, isGuest, familyPath } = useContext(AppContext);
+  const entrance = useRef(new Animated.Value(0)).current;
 
   const requireAccount = () => {
     Alert.alert('Conta necessária', 'Crie uma conta para salvar dados, confirmar remédios e usar o dispositivo.', [
@@ -630,6 +632,17 @@ function HomeScreen({ navigation }) {
   const nextMedicine = medicines
     .filter((item) => item.status !== 'Tomado')
     .sort((first, second) => first.time.localeCompare(second.time))[0];
+  const takenCount = medicines.filter((item) => item.status === 'Tomado').length;
+  const routineProgress = medicines.length ? Math.round((takenCount / medicines.length) * 100) : 0;
+
+  useEffect(() => {
+    Animated.spring(entrance, {
+      toValue: 1,
+      friction: 8,
+      tension: 45,
+      useNativeDriver: true,
+    }).start();
+  }, [entrance]);
 
   const confirmMedicine = async () => {
     if (isGuest) {
@@ -677,7 +690,7 @@ function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      <ScrollView style={{ paddingHorizontal: 20, flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <Animated.ScrollView style={{ paddingHorizontal: 20, flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Início</Text></View>
           <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
@@ -691,6 +704,18 @@ function HomeScreen({ navigation }) {
           </View>
           <MaterialCommunityIcons name="cast-connected" size={32} color={COLORS.primaryDark} />
         </View>
+
+        <Animated.View style={[styles.routineCard, { opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] }]}>
+          <View style={styles.routineCardHeader}>
+            <View style={styles.routineIcon}><Ionicons name="sparkles-outline" size={20} color="#FFF" /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.routineTitle}>Rotina de hoje</Text>
+              <Text style={styles.routineSubtitle}>{medicines.length ? `${takenCount} de ${medicines.length} doses confirmadas` : 'Adicione um remédio para começar'}</Text>
+            </View>
+            <Text style={styles.routinePercent}>{routineProgress}%</Text>
+          </View>
+          <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${routineProgress}%` }]} /></View>
+        </Animated.View>
 
         {isSosActive ? (
           <View style={styles.sosAlertCard}>
@@ -735,7 +760,7 @@ function HomeScreen({ navigation }) {
           </View>
         )}
 
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
