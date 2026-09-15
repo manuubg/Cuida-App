@@ -21,9 +21,10 @@ Para abrir no celular, use o Expo Go na mesma rede Wi-Fi e escaneie o QR Code.
 - Confirmação de medicamento e histórico de adesão.
 - Modo família para cadastrar e alternar entre familiares.
 - Dados, medicamentos, histórico e SOS separados por familiar.
-- Alertas de SOS e notificações locais.
+- Integração futura com o dispositivo físico do TCC para o SOS.
 - Tutorial inicial para orientar o cuidador.
-- Resumo visual da rotina diária com progresso e animação suave na tela inicial.
+- Tela inicial com identidade visual de acolhimento, resumo da rotina diária, progresso e animação suave.
+- Cartão de próximo passo com horário destacado e atalhos visuais para Remédios e Histórico.
 
 ## Organização do código
 

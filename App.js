@@ -21,7 +21,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as Notifications from 'expo-notifications';
 import createStyles from './styles';
 import {
   addDays,
@@ -41,16 +40,7 @@ import {
 // Firebase Imports
 import { auth, db } from './firebaseConfig';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth';
-import { ref, set, update, onValue } from 'firebase/database';
-
-// Configuração do comportamento da notificação quando o app está aberto
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+import { ref, push, set, update, onValue } from 'firebase/database';
 
 const AppContext = React.createContext(null);
 
@@ -82,26 +72,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = SCREEN_WIDTH / 375;
 function normalize(size) {
   return Math.round(PixelRatio.roundToNearestPixel(size * scale));
-}
-
-// Configuração de Canais para Notificação no Android
-async function registerForPushNotificationsAsync() {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('sos-notifications', {
-      name: 'Notificações de SOS',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF0000',
-      sound: 'default',
-    });
-  }
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-  return finalStatus === 'granted';
 }
 
 function LoginScreen({ navigation }) {
@@ -398,7 +368,7 @@ function RegisterScreen({ navigation }) {
 }
 
 function SideMenuButton({ navigation }) {
-  const { currentUser, isGuest } = useContext(AppContext);
+  const { currentUser, isGuest, profile, activeFamilyId, familyMembers, setProfile, setGuestMode } = useContext(AppContext);
   const [visible, setVisible] = useState(false);
   const menuItems = [
     { label: 'Início', icon: 'home-outline', route: 'Início' },
@@ -406,7 +376,21 @@ function SideMenuButton({ navigation }) {
     { label: 'Histórico', icon: 'history', route: 'Histórico' },
     { label: 'Perfil', icon: 'account-outline', route: 'Perfil' },
     ...(isGuest && !currentUser ? [{ label: 'Criar uma conta', icon: 'account-plus-outline', route: 'Register', stack: true }] : []),
+    ...(!isGuest && currentUser ? [{ label: 'Sair da conta', icon: 'logout', action: 'logout' }] : []),
   ];
+
+  const activeFamily = familyMembers.find((family) => family.id === activeFamilyId);
+  const handleMenuPress = (item) => {
+    setVisible(false);
+    if (item.action === 'logout') {
+      Alert.alert('Sair da conta', 'Tem certeza que deseja voltar para a tela de login?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: () => { signOut(auth); setProfile(INITIAL_PROFILE); setGuestMode(false); navigation.getParent()?.replace('Login'); } },
+      ]);
+      return;
+    }
+    item.stack ? navigation.getParent()?.navigate(item.route) : navigation.navigate(item.route);
+  };
 
   return (
     <>
@@ -416,9 +400,17 @@ function SideMenuButton({ navigation }) {
       <Modal transparent visible={visible} animationType="fade" onRequestClose={() => setVisible(false)}>
         <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setVisible(false)}>
           <View style={styles.sideMenu}>
-            <Text style={styles.sideMenuTitle}>Menu</Text>
+            <Text style={styles.sideMenuKicker}>CUIDA+</Text>
+            <Text style={styles.sideMenuTitle}>Seu cuidado</Text>
+            <View style={styles.menuProfileCard}>
+              <View style={styles.menuProfileIcon}><Ionicons name="heart" size={18} color="#FFF" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuProfileName}>{activeFamily?.name || profile.elder?.name || 'Familiar principal'}</Text>
+                <Text style={styles.menuProfileText}>{isGuest ? 'Modo visitante' : 'Acompanhamento ativo'}</Text>
+              </View>
+            </View>
             {menuItems.map((item) => (
-              <TouchableOpacity key={item.route} style={styles.sideMenuItem} onPress={() => { setVisible(false); item.stack ? navigation.getParent()?.navigate(item.route) : navigation.navigate(item.route); }}>
+              <TouchableOpacity key={item.route || item.action} style={styles.sideMenuItem} onPress={() => handleMenuPress(item)}>
                 <MaterialCommunityIcons name={item.icon} size={22} color={COLORS.primaryDark} />
                 <Text style={styles.sideMenuItemText}>{item.label}</Text>
               </TouchableOpacity>
@@ -427,37 +419,6 @@ function SideMenuButton({ navigation }) {
         </TouchableOpacity>
       </Modal>
     </>
-  );
-}
-
-function LogoutButton({ navigation }) {
-  const { setProfile, setGuestMode } = useContext(AppContext);
-
-  const confirmLogout = () => {
-    Alert.alert(
-      'Sair da conta',
-      'Tem certeza que deseja sair da conta e voltar para a tela de login?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: () => {
-            signOut(auth);
-            setProfile(INITIAL_PROFILE);
-            setGuestMode(false);
-            navigation.getParent()?.replace('Login');
-          },
-        },
-      ],
-    );
-  };
-
-  return (
-    <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout} accessibilityRole="button">
-      <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
-      <Text style={styles.logoutButtonText}>Sair</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -536,26 +497,6 @@ function FamilyModeButton() {
   );
 }
 
-function SosPushModal({ notice, onClose }) {
-  if (!notice) return null;
-
-  return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <View style={styles.sosPushOverlay}>
-        <View style={styles.sosPushCard}>
-          <View style={styles.sosPushIcon}><Ionicons name="warning" size={34} color="#FFF" /></View>
-          <Text style={styles.sosPushTitle}>SOS acionado</Text>
-          <Text style={styles.sosPushText}>{notice.message || 'Uma emergência foi solicitada. Verifique a situação imediatamente.'}</Text>
-          <Text style={styles.sosPushTime}>{notice.time || formatBrazilTime(new Date())}</Text>
-          <TouchableOpacity style={styles.sosPushButton} onPress={onClose}>
-            <Text style={styles.sosPushButtonText}>Entendi</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 const TUTORIAL_STEPS = [
   {
     title: 'Bem-vindo ao CUIDA+',
@@ -564,7 +505,7 @@ const TUTORIAL_STEPS = [
   },
   {
     title: 'Tela inicial',
-    text: 'Aqui você acompanha o próximo medicamento, confirma quando ele foi tomado e vê o status do dispositivo. O SOS aparece nesta tela quando uma emergência é acionada.',
+    text: 'Aqui você acompanha o próximo medicamento, confirma quando ele foi tomado e vê o status do dispositivo. O dispositivo físico do TCC ficará responsável pelo SOS.',
     route: 'Início',
   },
   {
@@ -619,7 +560,7 @@ function TutorialOverlay({ visible, currentStep, onNext, onSkip }) {
 }
 
 function HomeScreen({ navigation }) {
-  const { profile, medicines, displayStatus, isSosActive, currentUser, isGuest, familyPath } = useContext(AppContext);
+  const { profile, medicines, displayStatus, currentUser, isGuest, familyPath } = useContext(AppContext);
   const entrance = useRef(new Animated.Value(0)).current;
 
   const requireAccount = () => {
@@ -674,28 +615,21 @@ function HomeScreen({ navigation }) {
     }
   };
 
-  // Simulação de acionamento manual do SOS
-  const triggerSosTest = () => {
-    if (isGuest) {
-      requireAccount();
-      return;
-    }
-    if (currentUser) set(ref(db, familyPath('sos')), { active: true, time: new Date().toISOString() });
-  };
-
-  const resolveSos = () => {
-    if (currentUser) set(ref(db, familyPath('sos')), { active: false });
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <Animated.ScrollView style={{ paddingHorizontal: 20, flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Início</Text></View>
-          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
+          <FamilyModeButton />
         </View>
         {isGuest ? <View style={styles.guestBanner}><Ionicons name="information-circle-outline" size={20} color={COLORS.primaryDark} /><Text style={styles.guestBannerText}>Modo visitante: você pode conhecer o app, mas precisa criar uma conta para salvar e confirmar informações.</Text></View> : null}
+        <Animated.View style={[styles.homeHero, { opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }] }]}>
+          <View style={styles.heroOrb}><Ionicons name="heart" size={24} color="#FFF" /></View>
+          <Text style={styles.heroEyebrow}>CUIDADO COM PRESENÇA</Text>
+          <Text style={styles.heroTitle}>Olá, {profile.elder?.name ? profile.elder.name.split(' ')[0] : 'cuidador'}</Text>
+          <Text style={styles.heroSubtitle}>Um pequeno acompanhamento hoje faz uma grande diferença.</Text>
+        </Animated.View>
         <View style={styles.statusCard}>
           <View>
             <Text style={styles.statusTitle}>Status do display</Text>
@@ -717,35 +651,15 @@ function HomeScreen({ navigation }) {
           <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${routineProgress}%` }]} /></View>
         </Animated.View>
 
-        {isSosActive ? (
-          <View style={styles.sosAlertCard}>
-            <Text style={styles.sosAlertTitle}>🚨 EMERGÊNCIA SOLICITADA!</Text>
-            <Text style={styles.sosAlertText}>O idoso acionou o botão SOS! Verifique a situação imediatamente.</Text>
-            <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: '#FFF', marginTop: 10 }]} onPress={resolveSos}>
-              <Text style={{ color: COLORS.danger, fontWeight: 'bold' }}>Marcar como Resolvido</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.sosInfoCard} onPress={triggerSosTest}>
-            <Text style={styles.sosInfoText}>Nenhum SOS ativo. (Toque aqui para simular um teste SOS)</Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.homeHeader}>
-          <View>
-            <Text style={styles.homeGreeting}>Olá, {profile.elder?.name ? profile.elder.name.split(' ')[0] : 'Idoso'} 👋</Text>
-            <Text style={styles.homeSub}>Como vamos cuidar hoje?</Text>
-          </View>
-        </View>
-
         {nextMedicine ? (
           <View style={styles.nextCard}>
-            <Text style={styles.sectionLabel}>Próximo medicamento</Text>
-            <Text style={styles.nextMedName}>{nextMedicine.name}</Text>
+            <View style={styles.nextCardHeader}>
+              <View><Text style={styles.sectionLabel}>PRÓXIMO PASSO</Text><Text style={styles.nextMedName}>{nextMedicine.name}</Text></View>
+              <View style={styles.nextTimeBadge}><Ionicons name="time-outline" size={16} color="#FFF" /><Text style={styles.nextTimeBadgeText}>{nextMedicine.time}</Text></View>
+            </View>
             <Text style={styles.nextMedSub}>{nextMedicine.dose} · {nextMedicine.quantity}</Text>
             <View style={styles.timeRow}>
-              <Ionicons name="time-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
-              <Text style={styles.nextTime}>{nextMedicine.time}</Text>
+              <Text style={styles.nextHint}>Quando confirmar, o histórico será atualizado automaticamente.</Text>
             </View>
             <TouchableOpacity
               style={styles.confirmBtn}
@@ -756,7 +670,9 @@ function HomeScreen({ navigation }) {
           </View>
         ) : (
           <View style={styles.nextCard}>
+            <Ionicons name="checkmark-circle-outline" size={28} color={COLORS.success} />
             <Text style={styles.nextMedName}>Nenhum remédio pendente</Text>
+            <Text style={styles.nextHint}>Sua rotina está em dia por enquanto.</Text>
           </View>
         )}
 
@@ -850,7 +766,7 @@ function MedicinesScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Meus Remédios</Text></View>
-          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
+          <FamilyModeButton />
         </View>
         {isGuest ? <View style={styles.guestBanner}><Ionicons name="lock-closed-outline" size={20} color={COLORS.primaryDark} /><Text style={styles.guestBannerText}>Modo visitante: o cadastro de medicamentos fica disponível após criar uma conta.</Text></View> : null}
 
@@ -977,7 +893,7 @@ function HistoryScreen({ navigation }) {
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Histórico</Text></View>
-          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
+          <FamilyModeButton />
         </View>
 
         <View style={styles.calendarCard}>
@@ -1073,7 +989,7 @@ function HistoryScreen({ navigation }) {
 }
 
 function ProfileScreen({ navigation }) {
-  const { profile, setProfile, currentUser, isGuest, familyPath } = useContext(AppContext);
+  const { profile, setProfile, currentUser, isGuest, familyPath, medicines, historyEvents, activeFamilyId, familyMembers } = useContext(AppContext);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     caregiverName: profile.caregiver?.name || '',
@@ -1128,13 +1044,16 @@ function ProfileScreen({ navigation }) {
       .catch((err) => Alert.alert('Erro', err.message));
   };
 
+  const takenCount = medicines.filter((medicine) => medicine.status === 'Tomado').length;
+  const activeFamily = familyMembers.find((family) => family.id === activeFamilyId);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <ScrollView style={{ paddingHorizontal: 20, paddingTop: 10, flex: 1 }}>
         <View style={styles.screenHeader}>
           <View style={styles.screenHeaderLeft}><SideMenuButton navigation={navigation} /><Text style={styles.screenTitle}>Perfil do Usuário</Text></View>
-          <View style={styles.screenHeaderActions}><FamilyModeButton /><LogoutButton navigation={navigation} /></View>
+          <FamilyModeButton />
         </View>
 
         <View style={styles.profileCard}>
@@ -1169,6 +1088,34 @@ function ProfileScreen({ navigation }) {
               <Text style={styles.profileLabel}>Condição: {profile.elder?.condition}</Text>
             </>
           )}
+        </View>
+
+        <View style={styles.profileHighlightCard}>
+          <View style={styles.profileHighlightHeader}>
+            <View style={styles.profileHighlightIcon}><Ionicons name="sparkles-outline" size={21} color="#FFF" /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.profileHighlightTitle}>Resumo do cuidado</Text>
+              <Text style={styles.profileHighlightSubtitle}>Acompanhando {activeFamily?.name || profile.elder?.name || 'este familiar'}</Text>
+            </View>
+          </View>
+          <View style={styles.profileStatsRow}>
+            <View style={styles.profileStat}><Text style={styles.profileStatValue}>{medicines.length}</Text><Text style={styles.profileStatLabel}>remédios</Text></View>
+            <View style={styles.profileStat}><Text style={styles.profileStatValue}>{takenCount}</Text><Text style={styles.profileStatLabel}>confirmados</Text></View>
+            <View style={styles.profileStat}><Text style={styles.profileStatValue}>{historyEvents.length}</Text><Text style={styles.profileStatLabel}>registros</Text></View>
+          </View>
+        </View>
+
+        <View style={styles.profileCard}>
+          <Text style={styles.profileSectionTitle}>Plano de cuidado</Text>
+          <View style={styles.profileInfoRow}><Ionicons name="calendar-outline" size={19} color={COLORS.primaryDark} /><Text style={styles.profileInfoText}>Acompanhe os horários e confirme cada dose na tela inicial.</Text></View>
+          <View style={styles.profileInfoRow}><Ionicons name="people-outline" size={19} color={COLORS.primaryDark} /><Text style={styles.profileInfoText}>Use o Modo família para alternar entre os familiares.</Text></View>
+          <View style={styles.profileInfoRow}><Ionicons name="time-outline" size={19} color={COLORS.primaryDark} /><Text style={styles.profileInfoText}>O histórico registra a evolução do cuidado ao longo do dia.</Text></View>
+        </View>
+
+        <View style={styles.profileDeviceCard}>
+          <Ionicons name="hardware-chip-outline" size={22} color={COLORS.primaryDark} />
+          <View style={{ flex: 1 }}><Text style={styles.profileDeviceTitle}>Dispositivo do TCC</Text><Text style={styles.profileDeviceText}>{profile.device?.code ? `Código: ${profile.device.code}` : 'A integração com o dispositivo será configurada nesta etapa.'}</Text></View>
+          <View style={styles.profileComingBadge}><Text style={styles.profileComingText}>EM BREVE</Text></View>
         </View>
 
         <View style={styles.profileActions}>
@@ -1214,14 +1161,11 @@ export default function App() {
   const [familyMembers, setFamilyMembers] = useState([]);
   const [tutorialVisible, setTutorialVisible] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
-  const [sosNotice, setSosNotice] = useState(null);
-  const lastSosKey = useRef(null);
   const [profile, setProfile] = useState(INITIAL_PROFILE);
   const [medicines, setMedicines] = useState(INITIAL_MEDICINES);
   const [historyEvents, setHistoryEvents] = useState(INITIAL_HISTORY_EVENTS);
   const [historyDate, setHistoryDate] = useState(new Date());
   const [displayStatus, setDisplayStatus] = useState(INITIAL_PROFILE.display);
-  const [isSosActive, setIsSosActive] = useState(false);
 
   const addFamily = async ({ name, age, condition, deviceCode }) => {
     if (!currentUser) throw new Error('É necessário entrar em uma conta.');
@@ -1236,11 +1180,6 @@ export default function App() {
     await set(familyRef, { perfil: familyProfile });
     setActiveFamilyId(familyRef.key);
   };
-
-  // Registra permissões de notificação ao abrir o app
-  useEffect(() => {
-    registerForPushNotificationsAsync();
-  }, []);
 
   useEffect(() => onAuthStateChanged(auth, (user) => {
     setCurrentUser(user);
@@ -1276,7 +1215,6 @@ export default function App() {
       setProfile(INITIAL_PROFILE);
       setMedicines([]);
       setHistoryEvents([]);
-      setIsSosActive(false);
       setActiveFamilyId(PRIMARY_FAMILY_ID);
       return undefined;
     }
@@ -1321,59 +1259,10 @@ export default function App() {
       setHistoryEvents(loadedHistory.sort((first, second) => (second.timestamp || '').localeCompare(first.timestamp || '')));
     });
 
-    // 4. Escuta e dispara Alerta de SOS em Tempo Real com Notificação Sonora
-    const sosRef = ref(db, familyDataPath(currentUser.uid, activeFamilyId, 'sos'));
-    const unsubscribeSos = onValue(sosRef, async (snapshot) => {
-      const val = snapshot.val();
-      const active = Boolean(val && val.active);
-      const payload = val;
-
-      if (active) {
-        setIsSosActive(true);
-        const sosKey = String(payload?.time || 'active');
-        const isNewSos = lastSosKey.current !== sosKey;
-        if (isNewSos) {
-          lastSosKey.current = sosKey;
-          setSosNotice({
-            message: (payload && payload.message) || 'Uma emergência foi solicitada. Verifique a situação imediatamente.',
-            time: payload?.time ? formatBrazilTime(new Date(payload.time)) : formatBrazilTime(new Date()),
-          });
-        }
-        const title = (payload && payload.title) || '🚨 ALERTA DE EMERGÊNCIA - SOS!';
-        const body = (payload && payload.message) || 'O idoso acionou o botão de emergência no display!';
-        if (isNewSos) {
-          try {
-            await Notifications.scheduleNotificationAsync({
-              content: { title, body, sound: 'default' },
-              trigger: null,
-            });
-          } catch (e) {
-            console.warn('Falha ao agendar notificação:', e.message || e);
-          }
-        }
-
-        const newEvent = {
-          date: toLocalDateKey(new Date()),
-          timestamp: new Date().toISOString(),
-          title,
-          subtitle: `${formatBrazilTime(new Date())} • SOS recebido`,
-          type: 'warning',
-        };
-        const eventKey = `sos-${String(payload?.time || Date.now()).replace(/[.#$[\]]/g, '-')}`;
-        if (isNewSos) {
-          await set(ref(db, `${familyDataPath(currentUser.uid, activeFamilyId, 'historico')}/${eventKey}`), newEvent);
-        }
-      } else {
-        setIsSosActive(false);
-        lastSosKey.current = null;
-      }
-    });
-
     return () => {
       unsubscribeProfile();
       unsubscribeMeds();
       unsubscribeHistory();
-      unsubscribeSos();
     };
   }, [currentUser, activeFamilyId]);
 
@@ -1398,8 +1287,6 @@ export default function App() {
         setHistoryDate,
         displayStatus,
         setDisplayStatus,
-        isSosActive,
-        setIsSosActive,
       }}
     >
       <>
@@ -1411,7 +1298,6 @@ export default function App() {
           <Stack.Screen name="MainApp" component={TabNavigator} />
         </Stack.Navigator>
       </NavigationContainer>
-      <SosPushModal notice={sosNotice} onClose={() => setSosNotice(null)} />
       <TutorialOverlay
         visible={tutorialVisible && Boolean(currentUser)}
         currentStep={tutorialStep}
