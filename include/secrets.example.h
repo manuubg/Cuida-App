@@ -1,0 +1,5 @@
+#pragma once
+
+#define WIFI_SSID "NOME_DA_REDE_2_4_GHZ"
+#define WIFI_PASSWORD "SENHA_DO_WIFI"
+#define API_KEY "API_KEY_DO_FIREBASE"

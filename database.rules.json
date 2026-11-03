@@ -1,0 +1,55 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "usuarios": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "familiares": {
+          "$elderId": {
+            "perfil": {
+              "device": {
+                "uid": {
+                  ".read": "auth != null && auth.uid === data.val()"
+                }
+              }
+            },
+            "medicamentos": {
+              ".read": "auth != null && auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val()",
+              "$medicineId": {
+                "status": {
+                  ".write": "auth != null && (auth.uid === $uid || (auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val() && newData.val() === 'Tomado'))"
+                },
+                "lastTakenAt": {
+                  ".write": "auth != null && (auth.uid === $uid || auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val())"
+                },
+                "lastTakenDate": {
+                  ".write": "auth != null && (auth.uid === $uid || auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val())"
+                }
+              }
+            },
+            "historico": {
+              "$eventId": {
+                ".write": "auth != null && (auth.uid === $uid || (auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val() && (!data.exists() || (data.child('deviceUid').val() === auth.uid && data.child('eventId').val() === $eventId))))",
+                ".validate": "auth != null && (auth.uid === $uid ? newData.hasChildren(['timestamp', 'title', 'type']) : newData.hasChildren(['timestamp', 'title', 'type', 'source', 'deviceUid', 'eventId']) && newData.child('source').val() === 'esp32' && newData.child('deviceUid').val() === auth.uid && newData.child('eventId').val() === $eventId)"
+              }
+            },
+            "sos": {
+              "$eventId": {
+                ".write": "auth != null && (auth.uid === $uid || (auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val() && (!data.exists() || (data.child('deviceUid').val() === auth.uid && data.child('eventId').val() === $eventId))))",
+                ".validate": "auth != null && (auth.uid === $uid ? newData.hasChildren(['timestamp', 'title', 'type']) : newData.hasChildren(['timestamp', 'title', 'type', 'source', 'deviceUid', 'eventId']) && newData.child('source').val() === 'esp32' && newData.child('deviceUid').val() === auth.uid && newData.child('eventId').val() === $eventId)"
+              }
+            },
+            "status": {
+              "dispositivo": {
+                ".write": "auth != null && (auth.uid === $uid || auth.uid === root.child('usuarios').child($uid).child('familiares').child($elderId).child('perfil').child('device').child('uid').val())",
+                ".validate": "auth != null && (auth.uid === $uid || (newData.hasChildren(['deviceUid', 'lastSeen', 'online']) && newData.child('deviceUid').val() === auth.uid && newData.child('online').isBoolean() && newData.child('lastSeen').isNumber()))"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

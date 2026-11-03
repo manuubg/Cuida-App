@@ -1,0 +1,424 @@
+:root {
+  --background: #f8efe2;
+  --surface: #f1e1c8;
+  --surface-light: #fffaf3;
+  --text: #2d1f14;
+  --muted: #7a664e;
+  --primary: #b57b2f;
+  --primary-dark: #8a5f23;
+  --border: #d8bc9a;
+  --shadow: 0 18px 45px rgba(82, 54, 27, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  background: var(--background);
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.navbar {
+  width: min(1160px, calc(100% - 40px));
+  min-height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+}
+
+.brand-logo {
+  width: 72px;
+  height: auto;
+}
+
+.brand-plus {
+  color: var(--primary);
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.nav-links a {
+  transition: color 180ms ease;
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+  color: var(--primary-dark);
+}
+
+.hero {
+  min-height: 530px;
+  padding: 110px 20px 120px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: radial-gradient(circle at 50% 5%, #fff9ef 0, var(--background) 60%);
+}
+
+.hero-content {
+  width: min(760px, 100%);
+}
+
+.badge,
+.section-kicker {
+  color: var(--primary-dark);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.badge {
+  display: inline-block;
+  padding: 8px 15px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(241, 225, 200, 0.7);
+}
+
+.hero h1 {
+  max-width: 720px;
+  margin: 22px auto 14px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(2.8rem, 7vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.hero p {
+  max-width: 580px;
+  margin: 0 auto 30px;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 25px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(181, 123, 47, 0.2);
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.section {
+  padding: 86px 20px;
+}
+
+.section-inner {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.section h2 {
+  margin: 10px 0 16px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.section-desc {
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.secondary-desc {
+  margin-top: 16px;
+}
+
+.about-section {
+  background: var(--surface-light);
+  border-top: 1px solid rgba(216, 188, 154, 0.45);
+  border-bottom: 1px solid rgba(216, 188, 154, 0.45);
+}
+
+.development-section {
+  background: #f5ead8;
+}
+
+.architecture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 34px;
+  text-align: left;
+}
+
+.architecture-card {
+  min-height: 310px;
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-light);
+  box-shadow: var(--shadow);
+}
+
+.architecture-number,
+.feature-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-dark);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.architecture-number {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.architecture-card h3 {
+  margin: 22px 0 10px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.4rem;
+}
+
+.architecture-card p {
+  color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.7;
+}
+
+.technology-label {
+  display: block;
+  margin-top: 20px;
+  color: var(--primary-dark);
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 34px;
+  text-align: left;
+}
+
+.card {
+  min-height: 245px;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 45px rgba(82, 54, 27, 0.18);
+}
+
+.icon {
+  display: none;
+}
+
+.feature-mark {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.45rem;
+}
+
+.card p {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+.tft-section {
+  background: var(--surface-light);
+  border-top: 1px solid rgba(216, 188, 154, 0.45);
+}
+
+.tft-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 34px;
+  text-align: left;
+}
+
+.tft-screen {
+  min-height: 190px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 8px solid #3a3027;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #e9c875, #fff1bd);
+  box-shadow: inset 0 0 0 2px #a27a3a, var(--shadow);
+}
+
+.tft-screen:nth-child(2) {
+  background: linear-gradient(145deg, #d8e4c7, #f8f1d8);
+}
+
+.tft-screen:nth-child(3) {
+  background: linear-gradient(145deg, #e6b7a8, #fff0dc);
+}
+
+.tft-tag {
+  margin-bottom: auto;
+  color: var(--primary-dark);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tft-screen strong {
+  margin-top: 24px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.45rem;
+}
+
+.tft-screen small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.team-section {
+  background: rgba(241, 225, 200, 0.42);
+}
+
+.team-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.team-list span {
+  padding: 12px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-light);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+footer {
+  padding: 28px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .navbar {
+    width: min(100% - 28px, 560px);
+    min-height: auto;
+    padding: 16px 0;
+    align-items: flex-start;
+  }
+
+  .nav-links {
+    justify-content: flex-end;
+    gap: 8px 14px;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+  }
+
+  .hero {
+    min-height: 480px;
+    padding: 80px 20px 90px;
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  .architecture-grid,
+  .tft-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    display: block;
+  }
+
+  .nav-links {
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+
+  .hero h1 {
+    font-size: 2.75rem;
+  }
+}

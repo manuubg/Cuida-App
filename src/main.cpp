@@ -2,11 +2,7 @@
 #include <Firebase_ESP_Client.h>
 #include <addons/TokenHelper.h>
 #include <addons/RTDBHelper.h>
-
-// Coloque seus dados aqui
-#define WIFI_SSID "Emanuelli"
-#define WIFI_PASSWORD "manubg??"
-#define API_KEY "AIzaSyCXHBFDahCxPlaxw-oILvzKLpVZLusq_1E"
+#include "secrets.h"
 #define DATABASE_URL "https://cuidaplus-11255-default-rtdb.europe-west1.firebasedatabase.app"
 
 FirebaseData fbdo;
