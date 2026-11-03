@@ -41,6 +41,20 @@ Copie `include/secrets.example.h` para `include/secrets.h`, preencha os dados
 da rede e do Firebase, e compile com `pio run`. O arquivo `secrets.h` e ignorado
 pelo Git; nunca o envie ao repositorio.
 
+Para gravar a confirmacao de conexao, habilite o provedor **Anonymous** em
+Firebase Console > Authentication > Sign-in method e publique as regras do
+Realtime Database:
+
+```powershell
+firebase deploy --only database --project cuidaplus-11255
+```
+
+Depois de iniciar, o Monitor Serial mostra o caminho `/diagnosticos/<UID>` e
+confirma quando consegue gravar e ler o registro. No Firebase Console, abra
+Realtime Database > Data > `diagnosticos` para ver o status, IP, sinal Wi-Fi e
+horario da ultima confirmacao. As regras permitem que cada conta autenticada
+acesse apenas o diagnostico do proprio UID.
+
 ## Arduino IDE
 
 1. Instale o pacote de placas **esp32 by Espressif Systems** pelo Boards Manager.

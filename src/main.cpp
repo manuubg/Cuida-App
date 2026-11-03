@@ -8,9 +8,46 @@
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
-bool databaseTestDone = false;
 bool firebaseWaitNoticePrinted = false;
 unsigned long firebaseStartedAt = 0;
+unsigned long nextFirebaseAttemptAt = 0;
+
+constexpr unsigned long FIREBASE_RETRY_INTERVAL_MS = 10000;
+constexpr unsigned long CONNECTION_PROOF_INTERVAL_MS = 60000;
+
+bool saveConnectionProof() {
+  const String uid(auth.token.uid.c_str());
+  if (uid.isEmpty()) {
+    Serial.println("Firebase ainda nao informou o UID da conta autenticada.");
+    return false;
+  }
+
+  const String path = "/diagnosticos/" + uid;
+  FirebaseJson proof;
+  proof.set("status", "conectado");
+  proof.set("ip", WiFi.localIP().toString());
+  proof.set("rssi", WiFi.RSSI());
+  proof.set("uptimeMs", millis());
+  proof.set("lastSeen/.sv", "timestamp");
+
+  Serial.printf("Gravando confirmacao em %s ...\n", path.c_str());
+  if (!Firebase.RTDB.setJSON(&fbdo, path, &proof)) {
+    Serial.printf("Falha ao gravar no Realtime Database: %s\n",
+                  fbdo.errorReason().c_str());
+    return false;
+  }
+
+  if (!Firebase.RTDB.getJSON(&fbdo, path)) {
+    Serial.printf("Gravacao aceita, mas nao consegui ler de volta %s: %s\n",
+                  path.c_str(), fbdo.errorReason().c_str());
+    return false;
+  }
+
+  Serial.println("CONFIRMADO: dados gravados e lidos de volta do Firebase.");
+  Serial.printf("Caminho: %s\n", path.c_str());
+  Serial.printf("Registro: %s\n", fbdo.jsonString().c_str());
+  return true;
+}
 
 void setup() {
   Serial.begin(115200);
@@ -47,24 +84,19 @@ void setup() {
   Firebase.reconnectWiFi(true);
   firebaseStartedAt = millis();
   Serial.println("Firebase iniciado; aguardando autenticacao...");
+  Serial.println("A confirmacao sera salva em /diagnosticos/<UID> no Realtime Database.");
 }
 
 void loop() {
-  if (!databaseTestDone) {
-    if (Firebase.ready()) {
-      Serial.println("Testando acesso ao Realtime Database...");
-      if (Firebase.RTDB.setString(&fbdo, "/teste/mensagem", "ESP32 funcionando!")) {
-        Serial.println("SUCESSO: gravacao no Firebase Realtime Database confirmada!");
-        Serial.println("Confira o valor em /teste/mensagem no Firebase Console.");
-      } else {
-        Serial.print("FALHA no teste do Realtime Database: ");
-        Serial.println(fbdo.errorReason());
-      }
-      databaseTestDone = true;
-    } else if (!firebaseWaitNoticePrinted && millis() - firebaseStartedAt > 20000) {
-      Serial.println("AVISO: Firebase ainda nao autenticou; confira se o login anonimo esta habilitado.");
-      firebaseWaitNoticePrinted = true;
+  if (Firebase.ready() && millis() >= nextFirebaseAttemptAt) {
+    nextFirebaseAttemptAt = millis() + FIREBASE_RETRY_INTERVAL_MS;
+    if (saveConnectionProof()) {
+      nextFirebaseAttemptAt = millis() + CONNECTION_PROOF_INTERVAL_MS;
     }
+  } else if (!Firebase.ready() && !firebaseWaitNoticePrinted &&
+             millis() - firebaseStartedAt > 20000) {
+    Serial.println("AVISO: Firebase ainda nao autenticou; confira a internet, a API key e o login anonimo.");
+    firebaseWaitNoticePrinted = true;
   }
   delay(100);
 }
