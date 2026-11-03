@@ -5,6 +5,11 @@
 #include "secrets.h"
 #define DATABASE_URL "https://cuidaplus-11255-default-rtdb.europe-west1.firebasedatabase.app"
 
+#pragma once'     
+
+#define WIFI_SSID "GOOGLE_DAY"
+#define WIFI_PASSWORD "googleday2026"
+
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
@@ -22,7 +27,8 @@ bool saveConnectionProof() {
     return false;
   }
 
-  const String path = "/diagnosticos/" + uid;
+  String path = "/diagnosticos/";
+  path += uid;
   FirebaseJson proof;
   proof.set("status", "conectado");
   proof.set("ip", WiFi.localIP().toString());
@@ -55,6 +61,7 @@ void setup() {
   Serial.println("\nIniciando...");
 
   // Conecta Wi-Fi
+  // WIFI_SSID e WIFI_PASSWORD sao definidos em secrets.h (nome da rede e senha).
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Conectando Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -66,8 +73,8 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   // Configura Firebase
-  config.api_key = API_KEY;
-  config.database_url = DATABASE_URL;
+  config.api_key = "AIzaSyCXHBFDahCxPlaxw-oILvzKLpVZlUsq_1E";
+  config.database_url = "https://cuidaplus-11255-default-rtdb.europe-west1.firebasedatabase.app";
   config.token_status_callback = tokenStatusCallback;  // usa o callback padrão da lib
   config.timeout.serverResponse = 15000;
   config.timeout.socketConnection = 15000;
