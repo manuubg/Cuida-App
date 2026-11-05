@@ -8,4 +8,5 @@ node_modules/
 dist/
 npm-cache-temp/
 include/secrets.h
+src/secrets.h
 hardware/esp32/CuidaPlusESP32/secrets.h

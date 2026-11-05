@@ -34,26 +34,47 @@ O app salva um horario diario por medicamento. A data da ultima tomada evita rep
 
 O evento de dose so e criado quando o lembrete esta ativo, a tampa abre, o IR indica retirada e a tampa fecha. Isso nao prova ingestao. O SOS gera um evento `warning` em `historico` e `sos`; com o app aberto, o cuidador recebe um alerta e pode tocar no chamado no Historico para registrar o motivo. Push notification quando o app esta fechado/background ainda nao esta configurada. Eventos ainda pendentes de envio ficam apenas em RAM e podem ser perdidos se a placa reiniciar sem conexao.
 
-## PlatformIO (teste de conexao)
+## PlatformIO (`src/main.cpp`)
 
-O codigo de teste em `src/main.cpp` le as configuracoes de `include/secrets.h`.
-Copie `include/secrets.example.h` para `include/secrets.h`, preencha os dados
-da rede e do Firebase, e compile com `pio run`. O arquivo `secrets.h` e ignorado
-pelo Git; nunca o envie ao repositorio.
+O firmware PlatformIO sincroniza diretamente com os caminhos usados pelo app:
+`usuarios/{UID_DO_CUIDADOR}/familiares/{ID_DO_IDOSO}/medicamentos`,
+`historico`, `sos` e `status/dispositivo`. Ele usa uma conta Firebase
+Email/Senha exclusiva para o ESP32; nao habilite login anonimo para esse fluxo e
+nunca coloque a senha do cuidador no firmware.
 
-Para gravar a confirmacao de conexao, habilite o provedor **Anonymous** em
-Firebase Console > Authentication > Sign-in method e publique as regras do
-Realtime Database:
+1. Se `src/secrets.h` ainda nao existir, copie `src/secrets.example.h` para
+   cria-lo. Se ja existir, mantenha suas credenciais locais e adicione os campos
+   que estiverem faltando, especialmente e-mail/senha do dispositivo e
+   `ELDER_ID`. O arquivo real e ignorado pelo Git e nao deve ser compartilhado.
+2. No app, abra **Perfil > Conexao do ESP32**. Copie o UID do cuidador e o ID do
+   idoso mostrados ali para o firmware. Para o perfil principal, o ID e
+   `principal`.
+3. No Firebase Console, habilite o provedor **E-mail/senha** e crie uma conta
+   exclusiva para o ESP32 em **Authentication > Users**. Use o UID dessa conta
+   no campo de pareamento do app; o firmware imprime esse UID no Monitor Serial
+   apos autenticar.
+4. Publique as regras do Realtime Database:
 
-```powershell
-firebase deploy --only database --project cuidaplus-11255
-```
+   ```powershell
+   firebase deploy --only database --project cuidaplus-11255
+   ```
 
-Depois de iniciar, o Monitor Serial mostra o caminho `/diagnosticos/<UID>` e
-confirma quando consegue gravar e ler o registro. No Firebase Console, abra
-Realtime Database > Data > `diagnosticos` para ver o status, IP, sinal Wi-Fi e
-horario da ultima confirmacao. As regras permitem que cada conta autenticada
-acesse apenas o diagnostico do proprio UID.
+Esse comando publica somente as regras do RTDB; nao publica Cloud Functions nem
+Storage. O firmware consulta os medicamentos a cada 15 segundos, usa o fuso de
+Sao Paulo e evita repetir uma dose cuja `lastTakenDate` ja seja hoje. Ao horario
+cadastrado, mostra o nome no LCD e toca tres bipes curtos repetidos. Ao abrir a
+tampa, detectar a retirada no IR e fechar a tampa, atualiza o medicamento para
+`Tomado`, preenche `lastTakenAt`/`lastTakenDate` e grava o historico. A tela
+Inicial do app mostra cada etapa do sensor em tempo real.
+
+O SOS grava o evento em `sos` e `historico`; com o app aberto, o cuidador recebe
+o alerta. Notificacao do sistema com o app fechado/background ainda nao esta
+configurada. O envio de SOS pendente e mantido em RAM e pode ser perdido se a
+placa reiniciar sem conexao. A confirmacao de retirada nao prova ingestao.
+Evite cadastrar medicamentos diferentes no mesmo horario: o sensor nao
+identifica qual frasco/comprimido foi retirado. `Permission denied` normalmente
+indica regras nao publicadas, UID pareado divergente ou provedor E-mail/senha
+desabilitado. Se perder a placa, revogue a conta exclusiva no Firebase Auth.
 
 ## Arduino IDE
 
@@ -65,7 +86,37 @@ acesse apenas o diagnostico do proprio UID.
 
 O sketch valida o certificado raiz GTS Root R1; nao use `setInsecure()`. O ESP32 DevKit V1 conecta a redes Wi-Fi de 2,4 GHz, nao 5 GHz. O LCD esta configurado em `0x27`; se o modulo usar `0x3F`, altere o endereco na declaracao de `lcd`.
 
-## Pinos
+## Ligacoes do firmware PlatformIO (`src/main.cpp`)
+
+Estas ligacoes sao para o firmware em `src/main.cpp` e nao para o sketch
+Arduino alternativo abaixo.
+
+| Componente | ESP32 DevKit V1 |
+|---|---|
+| Botao SOS momentaneo de 2 terminais | Um terminal no GPIO 27; o outro no GND |
+| Sensor reed da tampa | Um terminal no GPIO 4; o outro no GND |
+| Sensor IR digital | DO/OUT no GPIO 5; VCC em 3V3; GND em GND |
+| Buzzer ativo | Sinal no GPIO 18; negativo no GND |
+| LCD I2C | SDA no GPIO 21; SCL no GPIO 22; VCC/GND conforme abaixo |
+
+O botao usa `INPUT_PULLUP`: solto fica em HIGH e pressionado liga o GPIO 27 ao
+GND, ficando em LOW. O firmware ignora o estado inicial do botao ao ligar e so
+envia SOS depois de detectar um novo pressionamento estavel.
+
+O reed tambem usa `INPUT_PULLUP`: com o contato fechado entre GPIO 4 e GND, a
+tampa e lida como fechada (LOW). Ligue todos os GNDs ao GND comum do ESP32.
+O pino DO/OUT do sensor IR nunca pode ultrapassar 3,3 V; se o modulo for
+alimentado em 5 V e sua saida tambem for 5 V, use conversor de nivel logico.
+O buzzer ativo recebe uma sequencia de tres bipes curtos repetidos. Buzzer ativo
+nao consegue tocar uma melodia de notas; para isso, substitua-o por um buzzer
+passivo. Para um buzzer que exija mais corrente que o GPIO possa fornecer, use
+transistor driver e alimentacao apropriada.
+
+O barramento I2C do LCD trabalha em 3,3 V no ESP32. Se o modulo LCD for
+alimentado em 5 V e tiver pull-ups I2C para 5 V, use um conversor de nivel
+logico nas linhas SDA e SCL. Nao ligue sinais de 5 V diretamente aos GPIOs.
+
+## Pinos do sketch Arduino alternativo (`CuidaPlusESP32.ino`)
 
 | Funcao | Pino ESP32 |
 |---|---:|

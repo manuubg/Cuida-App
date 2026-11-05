@@ -597,6 +597,15 @@ function HomeScreen({ navigation }) {
   const deviceLastSeenLabel = deviceLastSeen
     ? new Date(deviceLastSeen).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : 'ainda sem comunicação';
+  const deviceStateLabels = {
+    online: 'Conectado e aguardando atividade',
+    reminder: `Lembrete ativo${deviceStatus?.medicineName ? `: ${deviceStatus.medicineName}` : ''}`,
+    lid_open: '1ª verificação: tampa aberta',
+    ir_detected: '2ª verificação: retirada detectada pelo sensor IR',
+    dose_taken: 'Dose registrada pelo ESP32',
+    sos: 'SOS enviado pelo ESP32',
+  };
+  const deviceStateLabel = deviceStateLabels[deviceStatus?.state] || '';
 
   useEffect(() => {
     Animated.spring(entrance, {
@@ -664,6 +673,7 @@ function HomeScreen({ navigation }) {
             <Text style={styles.statusTitle}>Status do ESP32</Text>
             <Text style={styles.statusValue}>{deviceOnline ? 'Conectado' : 'Sem comunicação'}</Text>
             <Text style={styles.statusSubtitle}>Último contato: {deviceLastSeenLabel}{deviceStatus?.wifiRssi != null ? ` · Wi-Fi ${deviceStatus.wifiRssi} dBm` : ''}</Text>
+            {deviceStateLabel ? <Text style={styles.statusSubtitle}>Etapa: {deviceStateLabel}</Text> : null}
             <Text style={styles.statusSubtitle}>Firebase: {firebaseConnected === null ? 'verificando...' : firebaseConnected ? 'conectado' : 'desconectado'}</Text>
             {firebaseError ? <Text style={[styles.statusSubtitle, { color: COLORS.danger }]}>{firebaseError}</Text> : null}
           </View>
@@ -1210,6 +1220,7 @@ function ProfileScreen({ navigation }) {
         <View style={styles.profileCard}>
           <Text style={styles.profileSectionTitle}>Conexão do ESP32</Text>
           <Text style={styles.profileLabel}>UID do cuidador (use no firmware): {currentUser?.uid || 'indisponível'}</Text>
+          <Text style={styles.profileLabel}>ID do idoso (use no firmware): {activeFamilyId}</Text>
           {editing ? (
             <>
               <TextInput
